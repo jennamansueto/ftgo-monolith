@@ -50,8 +50,14 @@ public class OrderController {
   }
 
   @RequestMapping(method = RequestMethod.GET)
-  public ResponseEntity<List<GetOrderResponse>> getOrders(@RequestParam long consumerId) {
-    List<GetOrderResponse> orders = orderRepository.findAllByConsumerId(consumerId)
+  public ResponseEntity<List<GetOrderResponse>> getOrders(@RequestParam(required = false) Long consumerId) {
+    List<Order> orderList;
+    if (consumerId != null) {
+      orderList = orderRepository.findAllByConsumerId(consumerId);
+    } else {
+      orderList = (List<Order>) orderRepository.findAll();
+    }
+    List<GetOrderResponse> orders = orderList
             .stream()
             .map(this::makeGetOrderResponse)
             .collect(Collectors.toList());
