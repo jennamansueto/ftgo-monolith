@@ -7,6 +7,7 @@ import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderRequest;
 import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderResponse;
 import net.chrisrichardson.ftgo.orderservice.api.web.OrderAcceptance;
 import net.chrisrichardson.ftgo.orderservice.api.web.ReviseOrderRequest;
+import net.chrisrichardson.ftgo.orderservice.api.web.UpdateEtaRequest;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderNotFoundException;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderService;
 import org.springframework.http.HttpStatus;
@@ -71,7 +72,10 @@ public class OrderController {
             order.getOrderTotal(),
             order.getRestaurant().getName(),
             order.getAssignedCourier() == null ? null : order.getAssignedCourier().getId(),
-            order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order)
+            order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order),
+            order.getEstimatedPickupTime(),
+            order.getEstimatedDeliveryTime(),
+            order.getReadyBy()
     );
   }
 
@@ -123,6 +127,47 @@ public class OrderController {
   public ResponseEntity<String> delivered(@PathVariable long orderId) {
     orderService.noteDelivered(orderId);
     return new ResponseEntity<>(HttpStatus.OK);
+  }
+
+  @RequestMapping(path="/{orderId}/tracking", method= RequestMethod.GET)
+  public ResponseEntity<OrderTrackingResponse> getOrderTracking(@PathVariable long orderId) {
+    Optional<Order> orderOpt = orderRepository.findById(orderId);
+    return orderOpt
+        .map(order -> new ResponseEntity<>(makeOrderTrackingResponse(order), HttpStatus.OK))
+        .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+  }
+
+  private OrderTrackingResponse makeOrderTrackingResponse(Order order) {
+    return new OrderTrackingResponse(
+        order.getId(),
+        order.getOrderState().name(),
+        order.getEstimatedPickupTime(),
+        order.getEstimatedDeliveryTime(),
+        order.getReadyBy(),
+        order.getAcceptTime(),
+        order.getPreparingTime(),
+        order.getReadyForPickupTime(),
+        order.getPickedUpTime(),
+        order.getDeliveredTime(),
+        order.getAssignedCourier() != null ? order.getAssignedCourier().getId() : null,
+        order.getAssignedCourier() != null ? order.getAssignedCourier().actionsForDelivery(order) : null
+    );
+  }
+
+  @RequestMapping(path="/{orderId}/eta", method= RequestMethod.PUT)
+  public ResponseEntity<Void> updateEta(
+      @PathVariable long orderId,
+      @RequestBody UpdateEtaRequest request) {
+    try {
+      orderService.updateEstimatedTimes(
+          orderId,
+          request.getEstimatedPickupTime(),
+          request.getEstimatedDeliveryTime()
+      );
+      return new ResponseEntity<>(HttpStatus.OK);
+    } catch (OrderNotFoundException e) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
   }
 
 }

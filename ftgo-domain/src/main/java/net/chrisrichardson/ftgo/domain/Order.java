@@ -51,6 +51,8 @@ public class Order {
   private LocalDateTime readyForPickupTime;
   private LocalDateTime pickedUpTime;
   private LocalDateTime deliveredTime;
+  private LocalDateTime estimatedPickupTime;
+  private LocalDateTime estimatedDeliveryTime;
 
   @ManyToOne
   private Courier assignedCourier;
@@ -195,6 +197,51 @@ public class Order {
       default:
         throw new UnsupportedStateTransitionException(orderState);
     }
+  }
+
+  public LocalDateTime getReadyBy() {
+    return readyBy;
+  }
+
+  public LocalDateTime getAcceptTime() {
+    return acceptTime;
+  }
+
+  public LocalDateTime getPreparingTime() {
+    return preparingTime;
+  }
+
+  public LocalDateTime getReadyForPickupTime() {
+    return readyForPickupTime;
+  }
+
+  public LocalDateTime getPickedUpTime() {
+    return pickedUpTime;
+  }
+
+  public LocalDateTime getDeliveredTime() {
+    return deliveredTime;
+  }
+
+  public LocalDateTime getEstimatedPickupTime() {
+    return estimatedPickupTime;
+  }
+
+  public LocalDateTime getEstimatedDeliveryTime() {
+    return estimatedDeliveryTime;
+  }
+
+  public void setEstimatedTimes(LocalDateTime estimatedPickupTime, LocalDateTime estimatedDeliveryTime) {
+    this.estimatedPickupTime = estimatedPickupTime;
+    this.estimatedDeliveryTime = estimatedDeliveryTime;
+  }
+
+  public void updateEstimatedPickupTime(LocalDateTime newEstimatedPickupTime) {
+    this.estimatedPickupTime = newEstimatedPickupTime;
+  }
+
+  public void updateEstimatedDeliveryTime(LocalDateTime newEstimatedDeliveryTime) {
+    this.estimatedDeliveryTime = newEstimatedDeliveryTime;
   }
 }
 

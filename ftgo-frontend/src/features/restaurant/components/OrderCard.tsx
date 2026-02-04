@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Clock, ChefHat, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, ChefHat, CheckCircle, XCircle, Timer, Truck, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OrderStatusBadge, MoneyDisplay } from '@/components/common';
+import { useCountdown } from '../hooks/useCountdown';
 import type { Order } from '@/types';
 
 interface OrderCardProps {
@@ -10,6 +11,7 @@ interface OrderCardProps {
   onPreparing?: (orderId: number) => void;
   onReady?: (orderId: number) => void;
   onCancel?: (orderId: number) => void;
+  onUpdateEta?: (orderId: number, estimatedPickupTime?: string, estimatedDeliveryTime?: string) => void;
   isLoading?: boolean;
 }
 
@@ -19,14 +21,29 @@ export function OrderCard({
   onPreparing,
   onReady,
   onCancel,
+  onUpdateEta,
   isLoading,
 }: OrderCardProps) {
   const [readyInMinutes, setReadyInMinutes] = useState(20);
+  const [isEditingEta, setIsEditingEta] = useState(false);
+  const [newPrepMinutes, setNewPrepMinutes] = useState(20);
+
+  const prepCountdown = useCountdown(order.readyBy);
+  const deliveryCountdown = useCountdown(order.estimatedDeliveryTime);
 
   const handleAccept = () => {
     if (onAccept) {
       const readyBy = new Date(Date.now() + readyInMinutes * 60000).toISOString();
       onAccept(order.orderId, readyBy);
+    }
+  };
+
+  const handleUpdatePrepTime = () => {
+    if (onUpdateEta) {
+      const newReadyBy = new Date(Date.now() + newPrepMinutes * 60000).toISOString();
+      const newDeliveryTime = new Date(Date.now() + (newPrepMinutes + 30) * 60000).toISOString();
+      onUpdateEta(order.orderId, newReadyBy, newDeliveryTime);
+      setIsEditingEta(false);
     }
   };
 
@@ -63,6 +80,88 @@ export function OrderCard({
         </div>
         <MoneyDisplay amount={order.orderTotal} className="text-xl font-bold text-primary" />
       </div>
+
+      {(['ACCEPTED', 'PREPARING'].includes(order.state) && order.readyBy) || 
+       (['READY_FOR_PICKUP', 'PICKED_UP'].includes(order.state) && order.estimatedDeliveryTime) ? (
+        <div className="bg-gray-50 rounded-lg p-3 mb-4 space-y-2">
+          {['ACCEPTED', 'PREPARING'].includes(order.state) && order.readyBy && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Timer className="w-4 h-4 text-warning" />
+                <span className="text-sm text-gray-600">Prep Time Remaining:</span>
+              </div>
+              <span className={cn(
+                "font-mono font-bold",
+                prepCountdown.isExpired ? "text-danger" : "text-warning"
+              )}>
+                {prepCountdown.isExpired ? "OVERDUE" : prepCountdown.formattedTime}
+              </span>
+            </div>
+          )}
+          {['READY_FOR_PICKUP', 'PICKED_UP'].includes(order.state) && order.estimatedDeliveryTime && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Truck className="w-4 h-4 text-primary" />
+                <span className="text-sm text-gray-600">Est. Delivery:</span>
+              </div>
+              <span className={cn(
+                "font-mono font-bold",
+                deliveryCountdown.isExpired ? "text-danger" : "text-primary"
+              )}>
+                {deliveryCountdown.isExpired ? "OVERDUE" : deliveryCountdown.formattedTime}
+              </span>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {order.assignedCourier && (
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+          <Truck className="w-4 h-4" />
+          <span>Courier #{order.assignedCourier} assigned</span>
+        </div>
+      )}
+
+      {order.state === 'ACCEPTED' && onUpdateEta && (
+        <div className="mb-4">
+          {isEditingEta ? (
+            <div className="flex items-center gap-2">
+              <select
+                value={newPrepMinutes}
+                onChange={(e) => setNewPrepMinutes(Number(e.target.value))}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value={10}>10 min</option>
+                <option value={15}>15 min</option>
+                <option value={20}>20 min</option>
+                <option value={30}>30 min</option>
+                <option value={45}>45 min</option>
+                <option value={60}>60 min</option>
+              </select>
+              <button
+                onClick={handleUpdatePrepTime}
+                className="px-3 py-1 bg-primary text-white rounded text-sm"
+              >
+                Update
+              </button>
+              <button
+                onClick={() => setIsEditingEta(false)}
+                className="px-3 py-1 border rounded text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsEditingEta(true)}
+              className="flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              <Edit2 className="w-3 h-3" />
+              Adjust prep time
+            </button>
+          )}
+        </div>
+      )}
 
       {order.lineItems && order.lineItems.length > 0 && (
         <div className="border-t pt-4 mb-4">

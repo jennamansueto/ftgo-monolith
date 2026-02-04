@@ -63,6 +63,9 @@ export interface Order {
   lineItems?: OrderLineItem[];
   assignedCourier?: number | null;
   courierActions?: CourierAction[] | null;
+  estimatedPickupTime?: string | null;
+  estimatedDeliveryTime?: string | null;
+  readyBy?: string | null;
 }
 
 export interface CourierAction {
@@ -86,4 +89,19 @@ export interface Restaurant {
 export interface Consumer {
   id: number;
   name: PersonName;
+}
+
+export interface OrderTracking {
+  orderId: number;
+  state: OrderState;
+  estimatedPickupTime: string | null;
+  estimatedDeliveryTime: string | null;
+  readyBy: string | null;
+  acceptTime: string | null;
+  preparingTime: string | null;
+  readyForPickupTime: string | null;
+  pickedUpTime: string | null;
+  deliveredTime: string | null;
+  assignedCourierId: number | null;
+  courierActions: CourierAction[] | null;
 }
