@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Clock, ChefHat, CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OrderStatusBadge, MoneyDisplay } from '@/components/common';
+import { SendMessageForm } from './SendMessageForm';
 import type { Order } from '@/types';
 
 interface OrderCardProps {
@@ -10,7 +11,9 @@ interface OrderCardProps {
   onPreparing?: (orderId: number) => void;
   onReady?: (orderId: number) => void;
   onCancel?: (orderId: number) => void;
+  onSendMessage?: (orderId: number, message: string) => void;
   isLoading?: boolean;
+  isMessageLoading?: boolean;
 }
 
 export function OrderCard({
@@ -19,7 +22,9 @@ export function OrderCard({
   onPreparing,
   onReady,
   onCancel,
+  onSendMessage,
   isLoading,
+  isMessageLoading,
 }: OrderCardProps) {
   const [readyInMinutes, setReadyInMinutes] = useState(20);
 
@@ -136,6 +141,14 @@ export function OrderCard({
           </button>
         )}
       </div>
+
+      {onSendMessage && (
+        <SendMessageForm
+          orderId={order.orderId}
+          onSend={onSendMessage}
+          isLoading={isMessageLoading}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Order } from '@/types';
+import type { Order, OrderMessage, SendMessageRequest } from '@/types';
 
 export interface GetOrdersParams {
   consumerId?: number;
@@ -40,5 +40,10 @@ export const ordersApi = {
 
   cancelOrder: async (orderId: number): Promise<void> => {
     await apiClient.post(`/orders/${orderId}/cancel`, {});
+  },
+
+  sendMessage: async (orderId: number, request: SendMessageRequest): Promise<OrderMessage> => {
+    const response = await apiClient.post<OrderMessage>(`/orders/${orderId}/messages`, request);
+    return response.data;
   },
 };

@@ -8,6 +8,7 @@ import {
   useMarkPreparing,
   useMarkReady,
   useCancelOrder,
+  useSendMessage,
   filterOrdersByState,
   getOrderCounts,
 } from '../hooks/useOrders';
@@ -20,6 +21,7 @@ export function RestaurantDashboard() {
   const markPreparing = useMarkPreparing();
   const markReady = useMarkReady();
   const cancelOrder = useCancelOrder();
+  const sendMessage = useSendMessage();
 
   const counts = useMemo(() => {
     const orderCounts = getOrderCounts(orders);
@@ -53,6 +55,10 @@ export function RestaurantDashboard() {
     if (window.confirm('Are you sure you want to cancel this order?')) {
       cancelOrder.mutate(orderId);
     }
+  };
+
+  const handleSendMessage = (orderId: number, message: string) => {
+    sendMessage.mutate({ orderId, request: { message } });
   };
 
   const isAnyMutating =
@@ -165,13 +171,15 @@ export function RestaurantDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredOrders.map((order) => (
                 <OrderCard
-                  key={order.id}
+                  key={order.orderId}
                   order={order}
                   onAccept={handleAccept}
                   onPreparing={handlePreparing}
                   onReady={handleReady}
                   onCancel={handleCancel}
+                  onSendMessage={handleSendMessage}
                   isLoading={isAnyMutating}
+                  isMessageLoading={sendMessage.isPending}
                 />
               ))}
             </div>

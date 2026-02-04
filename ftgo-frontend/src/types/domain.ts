@@ -87,3 +87,14 @@ export interface Consumer {
   id: number;
   name: PersonName;
 }
+
+export interface OrderMessage {
+  id: number;
+  orderId: number;
+  message: string;
+  sentAt: string;
+}
+
+export interface SendMessageRequest {
+  message: string;
+}
