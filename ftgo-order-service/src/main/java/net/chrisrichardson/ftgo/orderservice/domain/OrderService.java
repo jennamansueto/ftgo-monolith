@@ -93,6 +93,7 @@ public class OrderService {
   public void accept(long orderId, LocalDateTime readyBy) {
     Order order = tryToFindOrder(orderId);
     order.acceptTicket(readyBy);
+    order.setEstimatedDeliveryTime(readyBy.plusMinutes(30));
     scheduleDelivery(order, readyBy);
   }
 

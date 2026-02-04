@@ -67,6 +67,7 @@ create table orders
   previous_ticket_state    integer,
   ready_by                 datetime,
   ready_for_pickup_time    datetime,
+  estimated_delivery_time  datetime,
   version                  bigint,
   assigned_courier_id      bigint,
   restaurant_id            bigint,

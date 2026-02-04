@@ -3,6 +3,7 @@ package net.chrisrichardson.ftgo.orderservice.web;
 import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.domain.Action;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class GetOrderResponse {
@@ -12,6 +13,11 @@ public class GetOrderResponse {
   private String restaurantName;
   private Long assignedCourier;
   private List<Action> courierActions;
+  private LocalDateTime estimatedDeliveryTime;
+  private LocalDateTime acceptTime;
+  private LocalDateTime preparingTime;
+  private LocalDateTime readyForPickupTime;
+  private LocalDateTime readyBy;
 
   private GetOrderResponse() {
   }
@@ -24,13 +30,20 @@ public class GetOrderResponse {
     this.assignedCourier = assignedCourier;
   }
 
-  public GetOrderResponse(long orderId, String state, Money orderTotal, String restaurantName, Long assignedCourier, List<Action> courierActions) {
+  public GetOrderResponse(long orderId, String state, Money orderTotal, String restaurantName, Long assignedCourier, List<Action> courierActions,
+                          LocalDateTime estimatedDeliveryTime, LocalDateTime acceptTime, LocalDateTime preparingTime,
+                          LocalDateTime readyForPickupTime, LocalDateTime readyBy) {
     this.orderId = orderId;
     this.state = state;
     this.orderTotal = orderTotal;
     this.restaurantName = restaurantName;
     this.assignedCourier = assignedCourier;
     this.courierActions = courierActions;
+    this.estimatedDeliveryTime = estimatedDeliveryTime;
+    this.acceptTime = acceptTime;
+    this.preparingTime = preparingTime;
+    this.readyForPickupTime = readyForPickupTime;
+    this.readyBy = readyBy;
   }
 
   public Money getOrderTotal() {
@@ -67,5 +80,25 @@ public class GetOrderResponse {
 
   public void setCourierActions(List<Action> courierActions) {
     this.courierActions = courierActions;
+  }
+
+  public LocalDateTime getEstimatedDeliveryTime() {
+    return estimatedDeliveryTime;
+  }
+
+  public LocalDateTime getAcceptTime() {
+    return acceptTime;
+  }
+
+  public LocalDateTime getPreparingTime() {
+    return preparingTime;
+  }
+
+  public LocalDateTime getReadyForPickupTime() {
+    return readyForPickupTime;
+  }
+
+  public LocalDateTime getReadyBy() {
+    return readyBy;
   }
 }
