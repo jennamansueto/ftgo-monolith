@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
+import net.chrisrichardson.ftgo.orderservice.web.OrderMessageDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,18 +30,21 @@ public class OrderService {
 
   private ConsumerService consumerService;
   private CourierRepository courierRepository;
+  private OrderMessageRepository orderMessageRepository;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService, CourierRepository courierRepository,
+                      OrderMessageRepository orderMessageRepository) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierRepository = courierRepository;
+    this.orderMessageRepository = orderMessageRepository;
   }
 
   @Transactional
@@ -136,5 +140,22 @@ public class OrderService {
   public void noteDelivered(long orderId) {
     Order order = tryToFindOrder(orderId);
     order.noteDelivered();
+  }
+
+  @Transactional
+  public OrderMessageDTO sendMessage(long orderId, String message) {
+    tryToFindOrder(orderId);
+    OrderMessage orderMessage = new OrderMessage(orderId, message);
+    orderMessageRepository.save(orderMessage);
+    return new OrderMessageDTO(orderMessage.getId(), orderMessage.getOrderId(),
+            orderMessage.getMessage(), orderMessage.getSentAt());
+  }
+
+  public List<OrderMessageDTO> getMessages(long orderId) {
+    tryToFindOrder(orderId);
+    return orderMessageRepository.findByOrderIdOrderBySentAtDesc(orderId)
+            .stream()
+            .map(m -> new OrderMessageDTO(m.getId(), m.getOrderId(), m.getMessage(), m.getSentAt()))
+            .collect(toList());
   }
 }

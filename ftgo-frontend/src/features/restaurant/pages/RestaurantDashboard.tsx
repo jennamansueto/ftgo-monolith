@@ -165,7 +165,7 @@ export function RestaurantDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredOrders.map((order) => (
                 <OrderCard
-                  key={order.id}
+                  key={order.orderId}
                   order={order}
                   onAccept={handleAccept}
                   onPreparing={handlePreparing}
