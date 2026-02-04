@@ -71,7 +71,10 @@ public class OrderController {
             order.getOrderTotal(),
             order.getRestaurant().getName(),
             order.getAssignedCourier() == null ? null : order.getAssignedCourier().getId(),
-            order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order)
+            order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order),
+            order.getReadyBy(),
+            order.getEstimatedPickupTime(),
+            order.getEstimatedDeliveryTime()
     );
   }
 
@@ -123,6 +126,43 @@ public class OrderController {
   public ResponseEntity<String> delivered(@PathVariable long orderId) {
     orderService.noteDelivered(orderId);
     return new ResponseEntity<>(HttpStatus.OK);
+  }
+
+  @RequestMapping(path="/{orderId}/tracking", method= RequestMethod.GET)
+  public ResponseEntity<OrderTrackingResponse> getTracking(@PathVariable long orderId) {
+    try {
+      Order order = orderService.getOrder(orderId);
+      return new ResponseEntity<>(makeOrderTrackingResponse(order), HttpStatus.OK);
+    } catch (OrderNotFoundException e) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+  }
+
+  @RequestMapping(path="/{orderId}/eta", method= RequestMethod.PUT)
+  public ResponseEntity<String> updateEta(@PathVariable long orderId, @RequestBody UpdateEtaRequest request) {
+    try {
+      orderService.updateEstimatedTimes(orderId, request.getEstimatedPickupTime(), request.getEstimatedDeliveryTime());
+      return new ResponseEntity<>(HttpStatus.OK);
+    } catch (OrderNotFoundException e) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+  }
+
+  private OrderTrackingResponse makeOrderTrackingResponse(Order order) {
+    return new OrderTrackingResponse(
+            order.getId(),
+            order.getOrderState().name(),
+            order.getReadyBy(),
+            order.getAcceptTime(),
+            order.getPreparingTime(),
+            order.getReadyForPickupTime(),
+            order.getPickedUpTime(),
+            order.getDeliveredTime(),
+            order.getEstimatedPickupTime(),
+            order.getEstimatedDeliveryTime(),
+            order.getAssignedCourier() == null ? null : order.getAssignedCourier().getId(),
+            order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order)
+    );
   }
 
 }

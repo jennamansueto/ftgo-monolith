@@ -103,9 +103,15 @@ public class OrderService {
     List<Courier> couriers = courierRepository.findAllAvailable();
     Courier courier = couriers.get(random.nextInt(couriers.size()));
     courier.addAction(Action.makePickup(order));
-    courier.addAction(Action.makeDropoff(order, readyBy.plusMinutes(30)));
+    
+    LocalDateTime estimatedPickupTime = readyBy;
+    LocalDateTime estimatedDeliveryTime = readyBy.plusMinutes(30);
+    
+    courier.addAction(Action.makeDropoff(order, estimatedDeliveryTime));
 
     order.schedule(courier);
+    order.setEstimatedPickupTime(estimatedPickupTime);
+    order.setEstimatedDeliveryTime(estimatedDeliveryTime);
 
   }
 
@@ -136,5 +142,15 @@ public class OrderService {
   public void noteDelivered(long orderId) {
     Order order = tryToFindOrder(orderId);
     order.noteDelivered();
+  }
+
+  @Transactional
+  public void updateEstimatedTimes(long orderId, LocalDateTime estimatedPickupTime, LocalDateTime estimatedDeliveryTime) {
+    Order order = tryToFindOrder(orderId);
+    order.updateEstimatedTimes(estimatedPickupTime, estimatedDeliveryTime);
+  }
+
+  public Order getOrder(long orderId) {
+    return tryToFindOrder(orderId);
   }
 }

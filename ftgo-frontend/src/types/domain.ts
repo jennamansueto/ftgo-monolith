@@ -63,6 +63,29 @@ export interface Order {
   lineItems?: OrderLineItem[];
   assignedCourier?: number | null;
   courierActions?: CourierAction[] | null;
+  readyBy?: string | null;
+  estimatedPickupTime?: string | null;
+  estimatedDeliveryTime?: string | null;
+}
+
+export interface OrderTracking {
+  orderId: number;
+  state: OrderState;
+  readyBy?: string | null;
+  acceptTime?: string | null;
+  preparingTime?: string | null;
+  readyForPickupTime?: string | null;
+  pickedUpTime?: string | null;
+  deliveredTime?: string | null;
+  estimatedPickupTime?: string | null;
+  estimatedDeliveryTime?: string | null;
+  assignedCourierId?: number | null;
+  courierActions?: CourierAction[] | null;
+}
+
+export interface UpdateEtaRequest {
+  estimatedPickupTime?: string;
+  estimatedDeliveryTime?: string;
 }
 
 export interface CourierAction {
