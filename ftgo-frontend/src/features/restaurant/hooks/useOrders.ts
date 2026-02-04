@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ordersApi, type AcceptOrderRequest } from '@/api/orders';
-import type { Order, OrderState } from '@/types';
+import type { Order, OrderState, SendMessageRequest } from '@/types';
 
 export function useOrders() {
   return useQuery({
@@ -77,4 +77,16 @@ export function getOrderCounts(orders: Order[]) {
     delivered: orders.filter(o => o.state === 'DELIVERED').length,
     cancelled: orders.filter(o => o.state === 'CANCELLED').length,
   };
+}
+
+export function useSendMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orderId, request }: { orderId: number; request: SendMessageRequest }) =>
+      ordersApi.sendMessage(orderId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
 }
