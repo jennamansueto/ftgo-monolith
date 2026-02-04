@@ -1,8 +1,14 @@
 package net.chrisrichardson.ftgo.restaurantservice.web;
 
+import net.chrisrichardson.ftgo.domain.OrderMessage;
 import net.chrisrichardson.ftgo.domain.Restaurant;
+import net.chrisrichardson.ftgo.restaurantservice.domain.OrderNotBelongToRestaurantException;
+import net.chrisrichardson.ftgo.restaurantservice.domain.OrderNotFoundException;
+import net.chrisrichardson.ftgo.restaurantservice.domain.RestaurantNotFoundException;
 import net.chrisrichardson.ftgo.restaurantservice.domain.RestaurantService;
 import net.chrisrichardson.ftgo.restaurantservice.events.CreateRestaurantRequest;
+import net.chrisrichardson.ftgo.restaurantservice.events.SendMessageRequest;
+import net.chrisrichardson.ftgo.restaurantservice.events.SendMessageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,5 +38,24 @@ public class RestaurantController {
     return new GetRestaurantResponse(r.getId(), r.getName());
   }
 
-
+  @RequestMapping(path = "/{restaurantId}/orders/{orderId}/messages", method = RequestMethod.POST)
+  public ResponseEntity<SendMessageResponse> sendMessage(
+          @PathVariable long restaurantId,
+          @PathVariable long orderId,
+          @RequestBody SendMessageRequest request) {
+    try {
+      OrderMessage orderMessage = restaurantService.sendMessage(restaurantId, orderId, request.getMessage());
+      SendMessageResponse response = new SendMessageResponse(
+              orderMessage.getId(),
+              orderMessage.getOrder().getId(),
+              orderMessage.getMessage(),
+              orderMessage.getCreatedAt()
+      );
+      return new ResponseEntity<>(response, HttpStatus.CREATED);
+    } catch (RestaurantNotFoundException | OrderNotFoundException e) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    } catch (OrderNotBelongToRestaurantException e) {
+      return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+    }
+  }
 }
