@@ -33,13 +33,20 @@ public class Action {
     return new Action(ActionType.PICKUP, order, null);
   }
 
+  public static Action makePickup(Order order, LocalDateTime pickupTime) {
+    return new Action(ActionType.PICKUP, order, pickupTime);
+  }
+
   public static Action makeDropoff(Order order, LocalDateTime deliveryTime) {
     return new Action(ActionType.DROPOFF, order, deliveryTime);
   }
 
-
   public ActionType getType() {
     return type;
+  }
+
+  public LocalDateTime getTime() {
+    return time;
   }
 
 }

@@ -2,6 +2,7 @@ package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
+import net.chrisrichardson.ftgo.common.UnsupportedStateTransitionException;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
@@ -97,16 +98,18 @@ public class OrderService {
   }
 
   public void scheduleDelivery(Order order, LocalDateTime readyBy) {
-
-    // Stupid implementation
-
     List<Courier> couriers = courierRepository.findAllAvailable();
     Courier courier = couriers.get(random.nextInt(couriers.size()));
-    courier.addAction(Action.makePickup(order));
-    courier.addAction(Action.makeDropoff(order, readyBy.plusMinutes(30)));
+
+    LocalDateTime estimatedPickupTime = readyBy;
+    LocalDateTime estimatedDeliveryTime = readyBy.plusMinutes(30);
+
+    order.setEstimatedTimes(estimatedPickupTime, estimatedDeliveryTime);
+
+    courier.addAction(Action.makePickup(order, estimatedPickupTime));
+    courier.addAction(Action.makeDropoff(order, estimatedDeliveryTime));
 
     order.schedule(courier);
-
   }
 
 
@@ -136,5 +139,22 @@ public class OrderService {
   public void noteDelivered(long orderId) {
     Order order = tryToFindOrder(orderId);
     order.noteDelivered();
+  }
+
+  @Transactional
+  public void updateEstimatedTimes(long orderId, LocalDateTime estimatedPickupTime, LocalDateTime estimatedDeliveryTime) {
+    Order order = tryToFindOrder(orderId);
+
+    OrderState state = order.getOrderState();
+    if (state == OrderState.DELIVERED || state == OrderState.CANCELLED) {
+      throw new UnsupportedStateTransitionException(state);
+    }
+
+    if (estimatedPickupTime != null) {
+      order.updateEstimatedPickupTime(estimatedPickupTime);
+    }
+    if (estimatedDeliveryTime != null) {
+      order.updateEstimatedDeliveryTime(estimatedDeliveryTime);
+    }
   }
 }

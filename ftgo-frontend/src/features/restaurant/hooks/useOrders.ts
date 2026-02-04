@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ordersApi, type AcceptOrderRequest } from '@/api/orders';
+import { ordersApi, type AcceptOrderRequest, type UpdateEtaRequest } from '@/api/orders';
 import type { Order, OrderState } from '@/types';
 
 export function useOrders() {
@@ -60,6 +60,27 @@ export function useCancelOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
     },
+  });
+}
+
+export function useUpdateEta() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ orderId, request }: { orderId: number; request: UpdateEtaRequest }) =>
+      ordersApi.updateEta(orderId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
+}
+
+export function useOrderTracking(orderId: number) {
+  return useQuery({
+    queryKey: ['orders', orderId, 'tracking'],
+    queryFn: () => ordersApi.getOrderTracking(orderId),
+    enabled: orderId > 0,
+    refetchInterval: 5000,
   });
 }
 

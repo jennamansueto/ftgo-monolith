@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Order } from '@/types';
+import type { Order, OrderTracking } from '@/types';
 
 export interface GetOrdersParams {
   consumerId?: number;
@@ -8,6 +8,11 @@ export interface GetOrdersParams {
 
 export interface AcceptOrderRequest {
   readyBy: string;
+}
+
+export interface UpdateEtaRequest {
+  estimatedPickupTime?: string;
+  estimatedDeliveryTime?: string;
 }
 
 export const ordersApi = {
@@ -40,5 +45,14 @@ export const ordersApi = {
 
   cancelOrder: async (orderId: number): Promise<void> => {
     await apiClient.post(`/orders/${orderId}/cancel`, {});
+  },
+
+  getOrderTracking: async (orderId: number): Promise<OrderTracking> => {
+    const response = await apiClient.get<OrderTracking>(`/orders/${orderId}/tracking`);
+    return response.data;
+  },
+
+  updateEta: async (orderId: number, request: UpdateEtaRequest): Promise<void> => {
+    await apiClient.put(`/orders/${orderId}/eta`, request);
   },
 };

@@ -8,6 +8,7 @@ import {
   useMarkPreparing,
   useMarkReady,
   useCancelOrder,
+  useUpdateEta,
   filterOrdersByState,
   getOrderCounts,
 } from '../hooks/useOrders';
@@ -20,6 +21,7 @@ export function RestaurantDashboard() {
   const markPreparing = useMarkPreparing();
   const markReady = useMarkReady();
   const cancelOrder = useCancelOrder();
+  const updateEta = useUpdateEta();
 
   const counts = useMemo(() => {
     const orderCounts = getOrderCounts(orders);
@@ -55,11 +57,19 @@ export function RestaurantDashboard() {
     }
   };
 
+  const handleUpdateEta = (orderId: number, estimatedPickupTime?: string, estimatedDeliveryTime?: string) => {
+    updateEta.mutate({
+      orderId,
+      request: { estimatedPickupTime, estimatedDeliveryTime },
+    });
+  };
+
   const isAnyMutating =
     acceptOrder.isPending ||
     markPreparing.isPending ||
     markReady.isPending ||
-    cancelOrder.isPending;
+    cancelOrder.isPending ||
+    updateEta.isPending;
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -165,12 +175,13 @@ export function RestaurantDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredOrders.map((order) => (
                 <OrderCard
-                  key={order.id}
+                  key={order.orderId}
                   order={order}
                   onAccept={handleAccept}
                   onPreparing={handlePreparing}
                   onReady={handleReady}
                   onCancel={handleCancel}
+                  onUpdateEta={handleUpdateEta}
                   isLoading={isAnyMutating}
                 />
               ))}
