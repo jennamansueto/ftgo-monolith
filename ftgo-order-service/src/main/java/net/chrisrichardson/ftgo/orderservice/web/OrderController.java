@@ -71,7 +71,12 @@ public class OrderController {
             order.getOrderTotal(),
             order.getRestaurant().getName(),
             order.getAssignedCourier() == null ? null : order.getAssignedCourier().getId(),
-            order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order)
+            order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order),
+            order.getEstimatedDeliveryTime(),
+            order.getAcceptTime(),
+            order.getPreparingTime(),
+            order.getReadyForPickupTime(),
+            order.getReadyBy()
     );
   }
 

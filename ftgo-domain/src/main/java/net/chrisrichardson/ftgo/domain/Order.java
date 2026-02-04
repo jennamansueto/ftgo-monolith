@@ -51,6 +51,7 @@ public class Order {
   private LocalDateTime readyForPickupTime;
   private LocalDateTime pickedUpTime;
   private LocalDateTime deliveredTime;
+  private LocalDateTime estimatedDeliveryTime;
 
   @ManyToOne
   private Courier assignedCourier;
@@ -184,6 +185,30 @@ public class Order {
 
   public Courier getAssignedCourier() {
     return assignedCourier;
+  }
+
+  public LocalDateTime getReadyBy() {
+    return readyBy;
+  }
+
+  public LocalDateTime getAcceptTime() {
+    return acceptTime;
+  }
+
+  public LocalDateTime getPreparingTime() {
+    return preparingTime;
+  }
+
+  public LocalDateTime getReadyForPickupTime() {
+    return readyForPickupTime;
+  }
+
+  public LocalDateTime getEstimatedDeliveryTime() {
+    return estimatedDeliveryTime;
+  }
+
+  public void setEstimatedDeliveryTime(LocalDateTime estimatedDeliveryTime) {
+    this.estimatedDeliveryTime = estimatedDeliveryTime;
   }
 
   public void noteDelivered() {
