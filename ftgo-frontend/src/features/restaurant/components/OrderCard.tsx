@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Clock, ChefHat, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, ChefHat, CheckCircle, XCircle, Truck, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { OrderStatusBadge, MoneyDisplay } from '@/components/common';
+import { OrderStatusBadge, MoneyDisplay, CountdownTimer, DeliveryTimeline } from '@/components/common';
 import type { Order } from '@/types';
 
 interface OrderCardProps {
@@ -22,6 +22,7 @@ export function OrderCard({
   isLoading,
 }: OrderCardProps) {
   const [readyInMinutes, setReadyInMinutes] = useState(20);
+  const [showTimeline, setShowTimeline] = useState(false);
 
   const handleAccept = () => {
     if (onAccept) {
@@ -71,6 +72,65 @@ export function OrderCard({
               {item.quantity}x {item.name}
             </p>
           ))}
+        </div>
+      )}
+
+      {(order.state === 'ACCEPTED' || order.state === 'PREPARING') && order.readyBy && (
+        <div className="bg-gray-50 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <CountdownTimer
+              targetTime={order.readyBy}
+              label="Prep time:"
+              className="text-base"
+            />
+            {order.estimatedDeliveryTime && (
+              <div className="text-sm text-gray-500 flex items-center gap-1">
+                <Truck className="w-4 h-4" />
+                <span>ETA: {new Date(order.estimatedDeliveryTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+              </div>
+            )}
+          </div>
+          {order.assignedCourier && (
+            <p className="text-xs text-gray-500 mt-2">Courier #{order.assignedCourier} assigned</p>
+          )}
+        </div>
+      )}
+
+      {order.state === 'READY_FOR_PICKUP' && order.estimatedDeliveryTime && (
+        <div className="bg-green-50 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-green-700">Ready for pickup</span>
+            <CountdownTimer
+              targetTime={order.estimatedDeliveryTime}
+              label="Delivery ETA:"
+              className="text-base"
+            />
+          </div>
+          {order.assignedCourier && (
+            <p className="text-xs text-gray-500 mt-2">Courier #{order.assignedCourier} assigned</p>
+          )}
+        </div>
+      )}
+
+      {(order.state !== 'APPROVED' && order.state !== 'CANCELLED') && (
+        <button
+          onClick={() => setShowTimeline(!showTimeline)}
+          className="w-full text-sm text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1 mb-3"
+        >
+          {showTimeline ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {showTimeline ? 'Hide timeline' : 'Show timeline'}
+        </button>
+      )}
+
+      {showTimeline && (
+        <div className="border-t pt-4 mb-4">
+          <DeliveryTimeline
+            currentState={order.state}
+            readyBy={order.readyBy}
+            estimatedPickupTime={order.estimatedPickupTime}
+            estimatedDeliveryTime={order.estimatedDeliveryTime}
+            assignedCourierId={order.assignedCourier}
+          />
         </div>
       )}
 

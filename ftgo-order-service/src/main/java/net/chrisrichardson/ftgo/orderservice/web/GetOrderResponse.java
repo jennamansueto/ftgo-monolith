@@ -3,6 +3,7 @@ package net.chrisrichardson.ftgo.orderservice.web;
 import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.domain.Action;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class GetOrderResponse {
@@ -12,6 +13,9 @@ public class GetOrderResponse {
   private String restaurantName;
   private Long assignedCourier;
   private List<Action> courierActions;
+  private LocalDateTime readyBy;
+  private LocalDateTime estimatedPickupTime;
+  private LocalDateTime estimatedDeliveryTime;
 
   private GetOrderResponse() {
   }
@@ -24,13 +28,19 @@ public class GetOrderResponse {
     this.assignedCourier = assignedCourier;
   }
 
-  public GetOrderResponse(long orderId, String state, Money orderTotal, String restaurantName, Long assignedCourier, List<Action> courierActions) {
+  public GetOrderResponse(long orderId, String state, Money orderTotal, String restaurantName, 
+                          Long assignedCourier, List<Action> courierActions,
+                          LocalDateTime readyBy, LocalDateTime estimatedPickupTime, 
+                          LocalDateTime estimatedDeliveryTime) {
     this.orderId = orderId;
     this.state = state;
     this.orderTotal = orderTotal;
     this.restaurantName = restaurantName;
     this.assignedCourier = assignedCourier;
     this.courierActions = courierActions;
+    this.readyBy = readyBy;
+    this.estimatedPickupTime = estimatedPickupTime;
+    this.estimatedDeliveryTime = estimatedDeliveryTime;
   }
 
   public Money getOrderTotal() {
@@ -67,5 +77,29 @@ public class GetOrderResponse {
 
   public void setCourierActions(List<Action> courierActions) {
     this.courierActions = courierActions;
+  }
+
+  public LocalDateTime getReadyBy() {
+    return readyBy;
+  }
+
+  public void setReadyBy(LocalDateTime readyBy) {
+    this.readyBy = readyBy;
+  }
+
+  public LocalDateTime getEstimatedPickupTime() {
+    return estimatedPickupTime;
+  }
+
+  public void setEstimatedPickupTime(LocalDateTime estimatedPickupTime) {
+    this.estimatedPickupTime = estimatedPickupTime;
+  }
+
+  public LocalDateTime getEstimatedDeliveryTime() {
+    return estimatedDeliveryTime;
+  }
+
+  public void setEstimatedDeliveryTime(LocalDateTime estimatedDeliveryTime) {
+    this.estimatedDeliveryTime = estimatedDeliveryTime;
   }
 }
