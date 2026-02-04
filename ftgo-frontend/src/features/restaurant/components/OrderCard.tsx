@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Clock, ChefHat, CheckCircle, XCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Clock, ChefHat, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OrderStatusBadge, MoneyDisplay } from '@/components/common';
 import type { Order } from '@/types';
@@ -135,6 +136,14 @@ export function OrderCard({
             Cancel
           </button>
         )}
+
+        <Link
+          to={`/orders/${order.orderId}`}
+          className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2"
+        >
+          <MessageSquare className="w-4 h-4" />
+          Messages
+        </Link>
       </div>
     </div>
   );

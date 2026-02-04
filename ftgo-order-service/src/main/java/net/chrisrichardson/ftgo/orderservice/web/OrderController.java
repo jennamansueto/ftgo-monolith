@@ -7,6 +7,7 @@ import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderRequest;
 import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderResponse;
 import net.chrisrichardson.ftgo.orderservice.api.web.OrderAcceptance;
 import net.chrisrichardson.ftgo.orderservice.api.web.ReviseOrderRequest;
+import net.chrisrichardson.ftgo.orderservice.api.web.SendMessageRequest;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderNotFoundException;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderService;
 import org.springframework.http.HttpStatus;
@@ -123,6 +124,26 @@ public class OrderController {
   public ResponseEntity<String> delivered(@PathVariable long orderId) {
     orderService.noteDelivered(orderId);
     return new ResponseEntity<>(HttpStatus.OK);
+  }
+
+  @RequestMapping(path="/{orderId}/messages", method= RequestMethod.POST)
+  public ResponseEntity<OrderMessageDTO> sendMessage(@PathVariable long orderId, @RequestBody SendMessageRequest request) {
+    try {
+      OrderMessageDTO message = orderService.sendMessage(orderId, request.getMessage());
+      return new ResponseEntity<>(message, HttpStatus.CREATED);
+    } catch (OrderNotFoundException e) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+  }
+
+  @RequestMapping(path="/{orderId}/messages", method= RequestMethod.GET)
+  public ResponseEntity<List<OrderMessageDTO>> getMessages(@PathVariable long orderId) {
+    try {
+      List<OrderMessageDTO> messages = orderService.getMessages(orderId);
+      return new ResponseEntity<>(messages, HttpStatus.OK);
+    } catch (OrderNotFoundException e) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
   }
 
 }
