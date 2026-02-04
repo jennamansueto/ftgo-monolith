@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { RefreshCw, Settings, LayoutDashboard, ClipboardList, BookOpen } from 'lucide-react';
 import { LoadingSpinner } from '@/components/common';
 import { OrderCard, StatsCard, OrderFilters, getStatesForTab, type FilterTab } from '../components';
@@ -91,13 +92,13 @@ export function RestaurantDashboard() {
             <ClipboardList className="w-5 h-5" />
             <span>Orders</span>
           </a>
-          <a
-            href="#"
+          <Link
+            to="/menu"
             className="flex items-center gap-3 px-4 py-3 text-white/60 hover:bg-white/5 rounded-lg mb-2"
           >
             <BookOpen className="w-5 h-5" />
             <span>Menu</span>
-          </a>
+          </Link>
           <a
             href="#"
             className="flex items-center gap-3 px-4 py-3 text-white/60 hover:bg-white/5 rounded-lg"

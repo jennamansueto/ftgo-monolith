@@ -1,7 +1,15 @@
-import { RestaurantDashboard } from './features/restaurant/pages';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { RestaurantDashboard, MenuManagement } from './features/restaurant/pages';
 
 function App() {
-  return <RestaurantDashboard />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<RestaurantDashboard />} />
+        <Route path="/menu" element={<MenuManagement />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

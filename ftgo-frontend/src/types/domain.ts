@@ -87,3 +87,18 @@ export interface Consumer {
   id: number;
   name: PersonName;
 }
+
+export interface AddMenuItemRequest {
+  id: string;
+  name: string;
+  price: Money;
+}
+
+export interface UpdateMenuItemRequest {
+  name?: string;
+  price?: Money;
+}
+
+export interface GetMenuResponse {
+  menuItems: MenuItem[];
+}

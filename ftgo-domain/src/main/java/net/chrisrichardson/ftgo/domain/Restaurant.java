@@ -1,9 +1,11 @@
 package net.chrisrichardson.ftgo.domain;
 
 import net.chrisrichardson.ftgo.common.Address;
+import net.chrisrichardson.ftgo.common.Money;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,7 +68,44 @@ public class Restaurant {
     return menuItems.stream().filter(mi -> mi.getId().equals(menuItemId)).findFirst();
   }
 
+  public List<MenuItem> getMenuItems() {
+    return menuItems != null ? menuItems : new ArrayList<>();
+  }
+
   public void reviseMenu(RestaurantMenu revisedMenu) {
-    throw new UnsupportedOperationException();
+    this.menuItems = revisedMenu.getMenuItems();
+  }
+
+  public void addMenuItem(MenuItem item) {
+    if (menuItems == null) {
+      menuItems = new ArrayList<>();
+    }
+    menuItems.add(item);
+  }
+
+  public boolean updateMenuItem(String itemId, String name, Money price) {
+    Optional<MenuItem> existingItem = findMenuItem(itemId);
+    if (existingItem.isPresent()) {
+      MenuItem item = existingItem.get();
+      if (name != null) {
+        item.setName(name);
+      }
+      if (price != null) {
+        item.setPrice(price);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  public boolean removeMenuItem(String itemId) {
+    if (menuItems == null) {
+      return false;
+    }
+    return menuItems.removeIf(mi -> mi.getId().equals(itemId));
+  }
+
+  public boolean hasMenuItem(String itemId) {
+    return findMenuItem(itemId).isPresent();
   }
 }
