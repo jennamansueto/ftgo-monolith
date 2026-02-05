@@ -1,3 +1,6 @@
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
 dependencies {
     compile project(":common-swagger")
     compile project(":ftgo-consumer-service-api")
@@ -8,6 +11,12 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
 
     compile 'javax.el:javax.el-api:2.2.5'
+
+    // MySQL driver for standalone service
+    runtime 'mysql:mysql-connector-java:5.1.47'
+
+    // Metrics
+    compile "io.micrometer:micrometer-registry-prometheus:$micrometerVersion"
 
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
     testCompile "com.jayway.restassured:rest-assured:$restAssuredVersion"
