@@ -8,13 +8,21 @@ services:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
       - MYSQL_USER=${MYSQL_USER:-mysqluser}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mysqlpw}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   ftgo-consumer-service:
     build: ./ftgo-consumer-service
     ports:
       - "8082:8082"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+    restart: on-failure
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo_consumer?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-mysqluser}
@@ -30,8 +38,10 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      - mysql
-      - ftgo-consumer-service
+      mysql:
+        condition: service_healthy
+      ftgo-consumer-service:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-mysqluser}

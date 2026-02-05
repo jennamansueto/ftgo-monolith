@@ -15,6 +15,9 @@ dependencies {
     // MySQL driver for standalone service
     runtime 'mysql:mysql-connector-java:5.1.47'
 
+    // Flyway for database migrations (5.2.4 is compatible with Spring Boot 2.0.x)
+    compile "org.flywaydb:flyway-core:5.2.4"
+
     // Metrics
     compile "io.micrometer:micrometer-registry-prometheus:$micrometerVersion"
 
