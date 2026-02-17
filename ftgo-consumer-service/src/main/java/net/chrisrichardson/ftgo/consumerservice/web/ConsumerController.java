@@ -1,8 +1,13 @@
 package net.chrisrichardson.ftgo.consumerservice.web;
 
+import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.consumerservice.api.web.CreateConsumerRequest;
 import net.chrisrichardson.ftgo.consumerservice.api.web.CreateConsumerResponse;
+import net.chrisrichardson.ftgo.consumerservice.api.web.ValidateOrderRequest;
+import net.chrisrichardson.ftgo.consumerservice.api.web.ValidateOrderResponse;
+import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerNotFoundException;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
+import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerVerificationFailedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,5 +30,22 @@ public class ConsumerController {
     return consumerService.findById(consumerId)
             .map(consumer -> new ResponseEntity<>(new GetConsumerResponse(consumer.getName()), HttpStatus.OK))
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+  }
+
+  @RequestMapping(method = RequestMethod.POST, path = "/{consumerId}/validate-order")
+  public ResponseEntity<ValidateOrderResponse> validateOrder(
+          @PathVariable long consumerId,
+          @RequestBody ValidateOrderRequest request) {
+    try {
+      Money orderTotal = new Money(request.getOrderTotal());
+      consumerService.validateOrderForConsumer(consumerId, orderTotal);
+      return new ResponseEntity<>(new ValidateOrderResponse(true, "Validation successful"), HttpStatus.OK);
+    } catch (ConsumerNotFoundException e) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    } catch (ConsumerVerificationFailedException e) {
+      return new ResponseEntity<>(
+              new ValidateOrderResponse(false, "Consumer verification failed"),
+              HttpStatus.UNPROCESSABLE_ENTITY);
+    }
   }
 }

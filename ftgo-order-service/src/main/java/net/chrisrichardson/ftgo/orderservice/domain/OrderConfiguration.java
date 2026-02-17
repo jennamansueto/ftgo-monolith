@@ -1,7 +1,7 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
+import net.chrisrichardson.ftgo.consumerservice.api.web.ConsumerServiceClient;
 import net.chrisrichardson.ftgo.domain.CourierRepository;
 import net.chrisrichardson.ftgo.domain.DomainConfiguration;
 import net.chrisrichardson.ftgo.domain.OrderRepository;
@@ -11,22 +11,34 @@ import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCusto
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
 
 @Configuration
 @Import(DomainConfiguration.class)
 public class OrderConfiguration {
-  // TODO move to framework
+  @Bean
+  public RestTemplate consumerServiceRestTemplate() {
+    return new RestTemplate();
+  }
+
+  @Bean
+  public ConsumerServiceClient consumerServiceClient(
+          RestTemplate consumerServiceRestTemplate,
+          @Value("${consumer.service.url:http://localhost:8082}") String consumerServiceUrl) {
+    return new ConsumerServiceClient(consumerServiceRestTemplate, consumerServiceUrl);
+  }
+
   @Bean
   public OrderService orderService(RestaurantRepository restaurantRepository,
                                    OrderRepository orderRepository,
                                    Optional<MeterRegistry> meterRegistry,
-                                   ConsumerService consumerService, CourierRepository courierRepository) {
+                                   ConsumerServiceClient consumerServiceClient, CourierRepository courierRepository) {
     return new OrderService(orderRepository,
             restaurantRepository,
             meterRegistry,
-            consumerService, courierRepository);
+            consumerServiceClient, courierRepository);
   }
 
   @Bean
