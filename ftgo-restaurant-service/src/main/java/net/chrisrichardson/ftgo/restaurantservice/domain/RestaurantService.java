@@ -1,14 +1,14 @@
 package net.chrisrichardson.ftgo.restaurantservice.domain;
 
-import net.chrisrichardson.ftgo.domain.MenuItem;
-import net.chrisrichardson.ftgo.domain.Restaurant;
-import net.chrisrichardson.ftgo.domain.RestaurantMenu;
-import net.chrisrichardson.ftgo.domain.RestaurantRepository;
 import net.chrisrichardson.ftgo.restaurantservice.events.CreateRestaurantRequest;
 import net.chrisrichardson.ftgo.restaurantservice.events.RestaurantMenuDTO;
+import net.chrisrichardson.ftgo.restaurantservice.persistence.MenuItemEntity;
+import net.chrisrichardson.ftgo.restaurantservice.persistence.RestaurantEntity;
+import net.chrisrichardson.ftgo.restaurantservice.persistence.RestaurantEntityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -16,19 +16,22 @@ import java.util.stream.Collectors;
 public class RestaurantService {
 
   @Autowired
-  private RestaurantRepository restaurantRepository;
+  private RestaurantEntityRepository restaurantEntityRepository;
 
-  public Restaurant create(CreateRestaurantRequest request) {
-    Restaurant restaurant = new Restaurant(request.getName(), request.getAddress(), makeRestaurantMenu(request.getMenu()));
-    restaurantRepository.save(restaurant);
+  public RestaurantEntity create(CreateRestaurantRequest request) {
+    List<MenuItemEntity> menuItems = makeMenuItems(request.getMenu());
+    RestaurantEntity restaurant = new RestaurantEntity(request.getName(), request.getAddress(), menuItems);
+    restaurantEntityRepository.save(restaurant);
     return restaurant;
   }
 
-  private RestaurantMenu makeRestaurantMenu(RestaurantMenuDTO menu) {
-    return new RestaurantMenu(menu.getMenuItemDTOs().stream().map(mi -> new MenuItem(mi.getId(), mi.getName(), mi.getPrice())).collect(Collectors.toList()));
+  private List<MenuItemEntity> makeMenuItems(RestaurantMenuDTO menu) {
+    return menu.getMenuItemDTOs().stream()
+            .map(mi -> new MenuItemEntity(mi.getId(), mi.getName(), mi.getPrice()))
+            .collect(Collectors.toList());
   }
 
-  public Optional<Restaurant> findById(long restaurantId) {
-    return restaurantRepository.findById(restaurantId);
+  public Optional<RestaurantEntity> findById(long restaurantId) {
+    return restaurantEntityRepository.findById(restaurantId);
   }
 }
