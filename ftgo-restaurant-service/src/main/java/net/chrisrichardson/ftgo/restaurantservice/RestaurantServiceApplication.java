@@ -1,9 +1,12 @@
 package net.chrisrichardson.ftgo.restaurantservice;
 
+import net.chrisrichardson.ftgo.common.CommonConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
+@Import(CommonConfiguration.class)
 public class RestaurantServiceApplication {
 
   public static void main(String[] args) {

@@ -24,7 +24,7 @@ public class RestaurantEntity {
 
   @Embedded
   @ElementCollection
-  @CollectionTable(name = "restaurant_menu_items")
+  @CollectionTable(name = "restaurant_menu_items", joinColumns = @JoinColumn(name = "restaurant_id"))
   private List<MenuItemEntity> menuItems;
 
   public RestaurantEntity() {
