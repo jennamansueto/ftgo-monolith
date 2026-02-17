@@ -28,17 +28,21 @@ public class OrderService {
 
   private ConsumerService consumerService;
   private CourierServiceClient courierServiceClient;
+  private OrderTransactionService orderTransactionService;
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierServiceClient courierServiceClient) {
+                      ConsumerService consumerService,
+                      CourierServiceClient courierServiceClient,
+                      OrderTransactionService orderTransactionService) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierServiceClient = courierServiceClient;
+    this.orderTransactionService = orderTransactionService;
   }
 
   @Transactional
@@ -88,14 +92,7 @@ public class OrderService {
 
   public void accept(long orderId, LocalDateTime readyBy) {
     long courierId = courierServiceClient.scheduleDelivery(orderId, readyBy);
-    acceptAndScheduleOrder(orderId, readyBy, courierId);
-  }
-
-  @Transactional
-  public void acceptAndScheduleOrder(long orderId, LocalDateTime readyBy, long courierId) {
-    Order order = tryToFindOrder(orderId);
-    order.acceptTicket(readyBy);
-    order.schedule(courierId);
+    orderTransactionService.acceptAndScheduleOrder(orderId, readyBy, courierId);
   }
 
   private Order tryToFindOrder(Long orderId) {
