@@ -1,8 +1,10 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
+import net.chrisrichardson.ftgo.orderservice.domain.client.RestaurantServiceClient;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +14,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
-@Transactional
 public class OrderService {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
@@ -24,6 +24,8 @@ public class OrderService {
   private OrderRepository orderRepository;
 
   private RestaurantRepository restaurantRepository;
+
+  private RestaurantServiceClient restaurantServiceClient;
 
   private Optional<MeterRegistry> meterRegistry;
 
@@ -33,30 +35,36 @@ public class OrderService {
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
+                      RestaurantServiceClient restaurantServiceClient,
                       Optional<MeterRegistry> meterRegistry,
                       ConsumerService consumerService, CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
+    this.restaurantServiceClient = restaurantServiceClient;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierRepository = courierRepository;
   }
 
-  @Transactional
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
+    Restaurant restaurant = restaurantServiceClient.findById(restaurantId)
             .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
-
 
     List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
 
-    Order order = new Order(consumerId, restaurant, orderLineItems);
+    Money orderTotal = orderLineItems.stream().map(OrderLineItem::getTotal).reduce(Money.ZERO, Money::add);
+    consumerService.validateOrderForConsumer(consumerId, orderTotal);
 
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
+    return createOrderTransactional(consumerId, restaurant, orderLineItems);
+  }
 
-    // TODO - charge a credit card too
+  @Transactional
+  public Order createOrderTransactional(long consumerId, Restaurant restaurant, List<OrderLineItem> orderLineItems) {
+    Restaurant mergedRestaurant = restaurantRepository.save(restaurant);
+
+    Order order = new Order(consumerId, mergedRestaurant, orderLineItems);
 
     orderRepository.save(order);
 
