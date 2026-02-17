@@ -52,8 +52,8 @@ public class Order {
   private LocalDateTime pickedUpTime;
   private LocalDateTime deliveredTime;
 
-  @ManyToOne
-  private Courier assignedCourier;
+  @Column(name = "assigned_courier_id")
+  private Long assignedCourierId;
 
   private Order() {
   }
@@ -178,12 +178,12 @@ public class Order {
     }
   }
 
-  public void schedule(Courier assignedCourier) {
-    this.assignedCourier = assignedCourier;
+  public void schedule(long assignedCourierId) {
+    this.assignedCourierId = assignedCourierId;
   }
 
-  public Courier getAssignedCourier() {
-    return assignedCourier;
+  public Long getAssignedCourierId() {
+    return assignedCourierId;
   }
 
   public void noteDelivered() {
