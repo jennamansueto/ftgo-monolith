@@ -1,3 +1,5 @@
+apply plugin: FtgoServicePlugin
+
 dependencies {
     compile project(":common-swagger")
     compile project(":ftgo-consumer-service-api")
@@ -12,4 +14,8 @@ dependencies {
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
     testCompile "com.jayway.restassured:rest-assured:$restAssuredVersion"
     testCompile "com.jayway.jsonpath:json-path:2.3.0"
+}
+
+springBoot {
+    mainClassName = 'net.chrisrichardson.ftgo.consumerservice.main.ConsumerServiceMain'
 }
