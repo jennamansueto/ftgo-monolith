@@ -42,6 +42,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo_restaurant_service?useSSL=false
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-mysqluser}
