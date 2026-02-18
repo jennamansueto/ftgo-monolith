@@ -19,6 +19,7 @@ services:
       - MYSQL_DATABASE=ftgo_consumer_service
   ftgo-consumer-service:
     build: ./ftgo-consumer-service-microservice
+    restart: on-failure
     ports:
       - "8090:8090"
     depends_on:
