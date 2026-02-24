@@ -4,6 +4,7 @@ import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.consumerservice.api.web.CreateConsumerRequest;
 import net.chrisrichardson.ftgo.consumerservice.api.web.CreateConsumerResponse;
 import net.chrisrichardson.ftgo.consumerservice.api.web.ValidateOrderForConsumerRequest;
+import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerNotFoundException;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -34,5 +35,10 @@ public class ConsumerController {
                                                        @RequestBody ValidateOrderForConsumerRequest request) {
     consumerService.validateOrderForConsumer(consumerId, request.getOrderTotal());
     return new ResponseEntity<>(HttpStatus.OK);
+  }
+
+  @ExceptionHandler(ConsumerNotFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public void handleConsumerNotFound() {
   }
 }

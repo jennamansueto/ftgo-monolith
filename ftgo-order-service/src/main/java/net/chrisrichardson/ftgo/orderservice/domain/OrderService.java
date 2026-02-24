@@ -96,6 +96,7 @@ public class OrderService {
     return order;
   }
 
+  @Transactional
   public void accept(long orderId, LocalDateTime readyBy) {
     Order order = tryToFindOrder(orderId);
     order.acceptTicket(readyBy);
