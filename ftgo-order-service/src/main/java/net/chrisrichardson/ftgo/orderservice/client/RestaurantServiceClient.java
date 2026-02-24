@@ -1,7 +1,5 @@
 package net.chrisrichardson.ftgo.orderservice.client;
 
-import net.chrisrichardson.ftgo.common.Money;
-import net.chrisrichardson.ftgo.orderservice.domain.InvalidMenuItemIdException;
 import net.chrisrichardson.ftgo.orderservice.domain.RestaurantNotFoundException;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import net.chrisrichardson.ftgo.restaurantservice.events.MenuItemDTO;
@@ -45,6 +43,10 @@ public class RestaurantServiceClient {
               url, request, MenuItemValidationResponse.class);
 
       MenuItemValidationResponse body = response.getBody();
+      if (body == null) {
+        logger.error("Received null response body from Restaurant Service for restaurant {}", restaurantId);
+        throw new RuntimeException("Received empty response from Restaurant Service");
+      }
 
       Map<String, MenuItemDTO> menuItemMap = body.getMenuItems().stream()
               .collect(Collectors.toMap(MenuItemDTO::getId, mi -> mi));

@@ -1,10 +1,8 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
-import net.chrisrichardson.ftgo.orderservice.client.RestaurantServiceClient;
 import net.chrisrichardson.ftgo.orderservice.client.RestaurantValidationResult;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import net.chrisrichardson.ftgo.restaurantservice.events.MenuItemDTO;
@@ -33,42 +31,25 @@ public class OrderService {
 
   private ConsumerService consumerService;
   private CourierRepository courierRepository;
-  private RestaurantServiceClient restaurantServiceClient;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository,
-                      RestaurantServiceClient restaurantServiceClient) {
+                      ConsumerService consumerService, CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierRepository = courierRepository;
-    this.restaurantServiceClient = restaurantServiceClient;
   }
 
   /**
-   * Creates an order. The restaurant validation is done via HTTP call to the
-   * Restaurant Service BEFORE starting the transaction to avoid holding a
-   * database connection idle during network I/O.
-   *
-   * Note: if the DB write fails after the successful remote validation call,
-   * there is no automatic rollback of the remote call. This is an accepted
-   * trade-off of the microservice extraction.
+   * Creates an order using pre-validated restaurant menu items.
+   * Called by {@link OrderServiceFacade} which performs the HTTP call to the
+   * Restaurant Service BEFORE this transactional method runs.
    */
-  public Order createOrder(long consumerId, long restaurantId,
-                           List<MenuItemIdAndQuantity> lineItems) {
-    // HTTP call to Restaurant Service - happens outside @Transactional
-    // because this method is called from the facade which handles the split
-    RestaurantValidationResult validationResult =
-            restaurantServiceClient.validateMenuItems(restaurantId, lineItems);
-
-    return createOrderTransactional(consumerId, restaurantId, lineItems, validationResult);
-  }
-
   @Transactional
   public Order createOrderTransactional(long consumerId, long restaurantId,
                                         List<MenuItemIdAndQuantity> lineItems,
