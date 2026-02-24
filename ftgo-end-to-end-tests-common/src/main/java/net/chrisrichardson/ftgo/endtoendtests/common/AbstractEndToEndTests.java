@@ -297,7 +297,7 @@ public abstract class AbstractEndToEndTests {
             body(new CreateCourierRequest(new PersonName("John", "Doe"), new Address("1 Scenic Drive", null, "Oakland", "CA", "94555"))).
             contentType("application/json").
             when().
-            post(baseUrl(getApplicationPort(), "couriers")).
+            post(baseUrl(getCourierServicePort(), "couriers")).
             then().
             statusCode(200)
             .extract()
@@ -309,7 +309,7 @@ public abstract class AbstractEndToEndTests {
             body(new CourierAvailability(true)).
             contentType("application/json").
             when().
-            post(baseUrl(getApplicationPort(), "couriers", Long.toString(courierId), "availability")).
+            post(baseUrl(getCourierServicePort(), "couriers", Long.toString(courierId), "availability")).
             then().
             statusCode(200);
   }
@@ -331,21 +331,17 @@ public abstract class AbstractEndToEndTests {
               get(orderBaseUrl(Long.toString(orderId))).
               then().
               statusCode(200)
-              .body("courierActions[0].type", equalTo("PICKUP"))
-              .body("courierActions[1].type", equalTo("DROPOFF"))
               .extract()
-              .path("assignedCourier");
+              .path("assignedCourierId");
       assertThat(assignedCourier).isGreaterThan(0);
       return assignedCourier;
     });
 
     given().
             when().
-            get(baseUrl(getApplicationPort(), "couriers", Long.toString(courierId))).
+            get(baseUrl(getCourierServicePort(), "couriers", Long.toString(courierId))).
             then().
-            statusCode(200)
-            .body("plan.actions[0].type", equalTo("PICKUP"))
-            .body("plan.actions[1].type", equalTo("DROPOFF"));
+            statusCode(200);
 
   }
 
@@ -384,4 +380,6 @@ public abstract class AbstractEndToEndTests {
   public abstract String getHost();
 
   public abstract int getApplicationPort();
+
+  public abstract int getCourierServicePort();
 }

@@ -7,6 +7,7 @@ import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderRequest;
 import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderResponse;
 import net.chrisrichardson.ftgo.orderservice.api.web.OrderAcceptance;
 import net.chrisrichardson.ftgo.orderservice.api.web.ReviseOrderRequest;
+import net.chrisrichardson.ftgo.orderservice.domain.OrderAcceptanceFacade;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderNotFoundException;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderService;
 import org.springframework.http.HttpStatus;
@@ -27,10 +28,13 @@ public class OrderController {
 
   private OrderRepository orderRepository;
 
+  private OrderAcceptanceFacade orderAcceptanceFacade;
 
-  public OrderController(OrderService orderService, OrderRepository orderRepository) {
+
+  public OrderController(OrderService orderService, OrderRepository orderRepository, OrderAcceptanceFacade orderAcceptanceFacade) {
     this.orderService = orderService;
     this.orderRepository = orderRepository;
+    this.orderAcceptanceFacade = orderAcceptanceFacade;
   }
 
   @RequestMapping(method = RequestMethod.POST)
@@ -70,8 +74,7 @@ public class OrderController {
             order.getOrderState().name(),
             order.getOrderTotal(),
             order.getRestaurant().getName(),
-            order.getAssignedCourier() == null ? null : order.getAssignedCourier().getId(),
-            order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order)
+            order.getAssignedCourierId()
     );
   }
 
@@ -97,7 +100,7 @@ public class OrderController {
 
   @RequestMapping(path="/{orderId}/accept", method= RequestMethod.POST)
   public ResponseEntity<String> accept(@PathVariable long orderId, @RequestBody OrderAcceptance orderAcceptance) {
-    orderService.accept(orderId, orderAcceptance.getReadyBy());
+    orderAcceptanceFacade.accept(orderId, orderAcceptance.getReadyBy());
     return new ResponseEntity<>(HttpStatus.OK);
   }
 
