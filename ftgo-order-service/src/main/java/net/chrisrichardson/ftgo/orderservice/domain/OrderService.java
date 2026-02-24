@@ -1,18 +1,22 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
+import net.chrisrichardson.ftgo.orderservice.client.RestaurantServiceClient;
+import net.chrisrichardson.ftgo.orderservice.client.RestaurantValidationResult;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
+import net.chrisrichardson.ftgo.restaurantservice.events.MenuItemDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -29,28 +33,50 @@ public class OrderService {
 
   private ConsumerService consumerService;
   private CourierRepository courierRepository;
+  private RestaurantServiceClient restaurantServiceClient;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService, CourierRepository courierRepository,
+                      RestaurantServiceClient restaurantServiceClient) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierRepository = courierRepository;
+    this.restaurantServiceClient = restaurantServiceClient;
+  }
+
+  /**
+   * Creates an order. The restaurant validation is done via HTTP call to the
+   * Restaurant Service BEFORE starting the transaction to avoid holding a
+   * database connection idle during network I/O.
+   *
+   * Note: if the DB write fails after the successful remote validation call,
+   * there is no automatic rollback of the remote call. This is an accepted
+   * trade-off of the microservice extraction.
+   */
+  public Order createOrder(long consumerId, long restaurantId,
+                           List<MenuItemIdAndQuantity> lineItems) {
+    // HTTP call to Restaurant Service - happens outside @Transactional
+    // because this method is called from the facade which handles the split
+    RestaurantValidationResult validationResult =
+            restaurantServiceClient.validateMenuItems(restaurantId, lineItems);
+
+    return createOrderTransactional(consumerId, restaurantId, lineItems, validationResult);
   }
 
   @Transactional
-  public Order createOrder(long consumerId, long restaurantId,
-                           List<MenuItemIdAndQuantity> lineItems) {
+  public Order createOrderTransactional(long consumerId, long restaurantId,
+                                        List<MenuItemIdAndQuantity> lineItems,
+                                        RestaurantValidationResult validationResult) {
     Restaurant restaurant = restaurantRepository.findById(restaurantId)
             .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
 
-
-    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
+    List<OrderLineItem> orderLineItems = makeOrderLineItemsFromValidation(lineItems, validationResult);
 
     Order order = new Order(consumerId, restaurant, orderLineItems);
 
@@ -67,10 +93,15 @@ public class OrderService {
     return order;
   }
 
-  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
+  private List<OrderLineItem> makeOrderLineItemsFromValidation(List<MenuItemIdAndQuantity> lineItems,
+                                                                RestaurantValidationResult validationResult) {
+    Map<String, MenuItemDTO> menuItemMap = validationResult.getMenuItems();
     return lineItems.stream().map(li -> {
-      MenuItem om = restaurant.findMenuItem(li.getMenuItemId()).orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
-      return new OrderLineItem(li.getMenuItemId(), om.getName(), om.getPrice(), li.getQuantity());
+      MenuItemDTO mi = menuItemMap.get(li.getMenuItemId());
+      if (mi == null) {
+        throw new InvalidMenuItemIdException(li.getMenuItemId());
+      }
+      return new OrderLineItem(li.getMenuItemId(), mi.getName(), mi.getPrice(), li.getQuantity());
     }).collect(toList());
   }
 
