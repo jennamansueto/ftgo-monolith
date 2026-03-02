@@ -1,5 +1,15 @@
 apply plugin: FtgoServicePlugin
 
+// Re-enable the plain jar task so this module can be used as a library dependency
+// (e.g. testCompile from ftgo-application) alongside the bootJar for standalone deployment.
+jar {
+    enabled = true
+}
+
+bootJar {
+    classifier = 'boot'
+}
+
 dependencies {
     compile project(":common-swagger")
     compile project(":ftgo-restaurant-service-api")
