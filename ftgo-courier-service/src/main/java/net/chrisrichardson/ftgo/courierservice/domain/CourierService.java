@@ -3,19 +3,22 @@ package net.chrisrichardson.ftgo.courierservice.domain;
 
 import net.chrisrichardson.ftgo.common.Address;
 import net.chrisrichardson.ftgo.common.PersonName;
-import net.chrisrichardson.ftgo.domain.Courier;
-import net.chrisrichardson.ftgo.domain.CourierRepository;
+import net.chrisrichardson.ftgo.courierservice.persistence.CourierAction;
+import net.chrisrichardson.ftgo.courierservice.persistence.CourierEntity;
+import net.chrisrichardson.ftgo.courierservice.persistence.CourierEntityRepository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
+@Transactional
 public class CourierService {
 
-  private CourierRepository courierRepository;
+  private CourierEntityRepository courierEntityRepository;
 
-  public CourierService(CourierRepository courierRepository) {
-    this.courierRepository = courierRepository;
+  public CourierService(CourierEntityRepository courierEntityRepository) {
+    this.courierEntityRepository = courierEntityRepository;
   }
 
-  @Transactional
   public void updateAvailability(long courierId, boolean available) {
     if (available)
       noteAvailable(courierId);
@@ -23,23 +26,32 @@ public class CourierService {
       noteUnavailable(courierId);
   }
 
-  @Transactional
-  public Courier createCourier(PersonName name, Address address) {
-    Courier courier = new Courier(name, address);
-    courierRepository.save(courier);
+  public CourierEntity createCourier(PersonName name, Address address) {
+    CourierEntity courier = new CourierEntity(name, address);
+    courierEntityRepository.save(courier);
     return courier;
   }
 
   void noteAvailable(long courierId) {
-    courierRepository.findById(courierId).get().noteAvailable();
+    findCourierById(courierId).noteAvailable();
   }
 
   void noteUnavailable(long courierId) {
-    courierRepository.findById(courierId).get().noteUnavailable();
+    findCourierById(courierId).noteUnavailable();
   }
 
-  public Courier findCourierById(long courierId) {
-    return courierRepository.findById(courierId).get();
+  public CourierEntity findCourierById(long courierId) {
+    return courierEntityRepository.findById(courierId)
+            .orElseThrow(() -> new CourierNotFoundException(courierId));
+  }
+
+  public List<CourierEntity> findAllAvailable() {
+    return courierEntityRepository.findAllAvailable();
+  }
+
+  public void addAction(long courierId, CourierAction action) {
+    CourierEntity courier = findCourierById(courierId);
+    courier.addAction(action);
   }
 
 }

@@ -1,18 +1,15 @@
 package net.chrisrichardson.ftgo.courierservice.domain;
 
-import net.chrisrichardson.ftgo.domain.CourierRepository;
-import net.chrisrichardson.ftgo.domain.DomainConfiguration;
+import net.chrisrichardson.ftgo.courierservice.persistence.CourierEntityRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import(DomainConfiguration.class)
 public class CourierServiceConfiguration {
 
   @Bean
-  public CourierService courierService(CourierRepository courierRepository) {
-    return new CourierService(courierRepository);
+  public CourierService courierService(CourierEntityRepository courierEntityRepository) {
+    return new CourierService(courierEntityRepository);
   }
 
 }
