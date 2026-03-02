@@ -1,8 +1,8 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
+import net.chrisrichardson.ftgo.orderservice.client.ConsumerServiceClient;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -27,37 +26,50 @@ public class OrderService {
 
   private Optional<MeterRegistry> meterRegistry;
 
-  private ConsumerService consumerService;
+  private ConsumerServiceClient consumerServiceClient;
   private CourierRepository courierRepository;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerServiceClient consumerServiceClient, CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
-    this.consumerService = consumerService;
+    this.consumerServiceClient = consumerServiceClient;
     this.courierRepository = courierRepository;
   }
 
-  @Transactional
+  /**
+   * Creates an order. This method is NOT transactional so that the HTTP call
+   * to validate the consumer does not hold a DB connection during network I/O.
+   * The actual DB write is performed in the @Transactional persistOrder() method.
+   *
+   * Note: if the DB write fails after a successful consumer validation,
+   * the validation cannot be rolled back (eventual consistency trade-off).
+   */
+  @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
     Restaurant restaurant = restaurantRepository.findById(restaurantId)
             .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
 
-
     List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
 
     Order order = new Order(consumerId, restaurant, orderLineItems);
 
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
+    // Validate consumer via HTTP - no transaction active here
+    consumerServiceClient.validateOrderForConsumer(consumerId, order.getOrderTotal());
 
     // TODO - charge a credit card too
 
+    return persistOrder(order);
+  }
+
+  @Transactional
+  public Order persistOrder(Order order) {
     orderRepository.save(order);
 
     meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
