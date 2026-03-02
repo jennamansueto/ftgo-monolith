@@ -14,11 +14,11 @@ create table courier
 
 create table courier_actions
 (
-  courier_entity_id bigint not null,
+  courier_id bigint not null,
   order_id          bigint,
   time              datetime,
   type              varchar(255)
 ) engine = InnoDB;
 
 alter table courier_actions
-  add constraint courier_actions_courier_id foreign key (courier_entity_id) references courier (id);
+  add constraint courier_actions_courier_id foreign key (courier_id) references courier (id);

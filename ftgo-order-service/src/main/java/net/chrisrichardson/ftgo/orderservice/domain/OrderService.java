@@ -9,6 +9,7 @@ import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,18 +30,21 @@ public class OrderService {
 
   private ConsumerService consumerService;
   private CourierServiceClient courierServiceClient;
+  private TransactionTemplate transactionTemplate;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierServiceClient courierServiceClient) {
+                      ConsumerService consumerService, CourierServiceClient courierServiceClient,
+                      TransactionTemplate transactionTemplate) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierServiceClient = courierServiceClient;
+    this.transactionTemplate = transactionTemplate;
   }
 
   @Transactional
@@ -107,15 +111,14 @@ public class OrderService {
     courierServiceClient.addAction(selectedCourier.getId(), "PICKUP", orderId, null);
     courierServiceClient.addAction(selectedCourier.getId(), "DROPOFF", orderId, readyBy.plusMinutes(30));
 
-    // Step 3: Update the order in a transactional context
-    acceptOrderTransactional(orderId, readyBy, selectedCourier.getId());
-  }
-
-  @Transactional
-  public void acceptOrderTransactional(long orderId, LocalDateTime readyBy, long courierId) {
-    Order order = tryToFindOrder(orderId);
-    order.acceptTicket(readyBy);
-    order.scheduleWithCourierId(courierId);
+    // Step 3: Update the order in a transactional context using TransactionTemplate
+    // (self-invocation of @Transactional methods doesn't work with Spring proxies)
+    transactionTemplate.execute(status -> {
+      Order order = tryToFindOrder(orderId);
+      order.acceptTicket(readyBy);
+      order.scheduleWithCourierId(selectedCourier.getId());
+      return null;
+    });
   }
 
 
