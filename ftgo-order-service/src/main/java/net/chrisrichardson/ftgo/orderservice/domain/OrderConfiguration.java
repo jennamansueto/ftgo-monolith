@@ -5,13 +5,17 @@ import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.CourierRepository;
 import net.chrisrichardson.ftgo.domain.DomainConfiguration;
 import net.chrisrichardson.ftgo.domain.OrderRepository;
+import net.chrisrichardson.ftgo.common.MoneyModule;
 import net.chrisrichardson.ftgo.orderservice.client.RestaurantServiceClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
@@ -25,7 +29,18 @@ public class OrderConfiguration {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
     factory.setConnectTimeout(5000);
     factory.setReadTimeout(10000);
-    return new RestTemplate(factory);
+    RestTemplate restTemplate = new RestTemplate(factory);
+
+    // Register MoneyModule so the RestTemplate can deserialize Money fields
+    // (e.g. MenuItemDTO.price) serialized as plain strings by the restaurant service.
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new MoneyModule());
+    objectMapper.registerModule(new JavaTimeModule());
+    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
+    restTemplate.getMessageConverters().removeIf(c -> c instanceof MappingJackson2HttpMessageConverter);
+    restTemplate.getMessageConverters().add(converter);
+
+    return restTemplate;
   }
 
   @Bean
