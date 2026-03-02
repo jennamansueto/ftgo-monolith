@@ -28,18 +28,22 @@ public class OrderService {
 
   private ConsumerServiceClient consumerServiceClient;
   private CourierRepository courierRepository;
+  private OrderPersistenceService orderPersistenceService;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerServiceClient consumerServiceClient, CourierRepository courierRepository) {
+                      ConsumerServiceClient consumerServiceClient,
+                      CourierRepository courierRepository,
+                      OrderPersistenceService orderPersistenceService) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerServiceClient = consumerServiceClient;
     this.courierRepository = courierRepository;
+    this.orderPersistenceService = orderPersistenceService;
   }
 
   /**
@@ -65,18 +69,7 @@ public class OrderService {
 
     // TODO - charge a credit card too
 
-    return persistOrder(order);
-  }
-
-  @Transactional
-  public Order persistOrder(Order order) {
-    orderRepository.save(order);
-
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
-
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
+    return orderPersistenceService.persistOrder(order);
   }
 
   private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {

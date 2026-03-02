@@ -36,14 +36,22 @@ public class OrderConfiguration {
   }
 
   @Bean
+  public OrderPersistenceService orderPersistenceService(OrderRepository orderRepository,
+                                                         Optional<MeterRegistry> meterRegistry) {
+    return new OrderPersistenceService(orderRepository, meterRegistry);
+  }
+
+  @Bean
   public OrderService orderService(RestaurantRepository restaurantRepository,
                                    OrderRepository orderRepository,
                                    Optional<MeterRegistry> meterRegistry,
-                                   ConsumerServiceClient consumerServiceClient, CourierRepository courierRepository) {
+                                   ConsumerServiceClient consumerServiceClient,
+                                   CourierRepository courierRepository,
+                                   OrderPersistenceService orderPersistenceService) {
     return new OrderService(orderRepository,
             restaurantRepository,
             meterRegistry,
-            consumerServiceClient, courierRepository);
+            consumerServiceClient, courierRepository, orderPersistenceService);
   }
 
   @Bean
