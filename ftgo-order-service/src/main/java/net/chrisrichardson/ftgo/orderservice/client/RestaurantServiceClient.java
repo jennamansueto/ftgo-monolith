@@ -17,10 +17,14 @@ public class RestaurantServiceClient {
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final RestTemplate restTemplate;
-  private final String restaurantServiceUrl;
+  private String restaurantServiceUrl;
 
   public RestaurantServiceClient(RestTemplate restTemplate, String restaurantServiceUrl) {
     this.restTemplate = restTemplate;
+    this.restaurantServiceUrl = restaurantServiceUrl;
+  }
+
+  public void setRestaurantServiceUrl(String restaurantServiceUrl) {
     this.restaurantServiceUrl = restaurantServiceUrl;
   }
 
