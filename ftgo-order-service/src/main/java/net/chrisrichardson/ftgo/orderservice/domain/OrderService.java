@@ -1,6 +1,7 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import net.chrisrichardson.ftgo.common.UnsupportedStateTransitionException;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.client.AvailableCourierDTO;
@@ -103,8 +104,23 @@ public class OrderService {
    * the courier actions cannot be rolled back atomically (eventual consistency trade-off).
    */
   public void accept(long orderId, LocalDateTime readyBy) {
+    // Step 0: Validate order state before making irreversible HTTP calls.
+    // This minimizes orphaned courier actions if the order is not in APPROVED state.
+    // A race condition is still possible but this catches the common validation failures.
+    transactionTemplate.execute(status -> {
+      Order order = tryToFindOrder(orderId);
+      if (order.getOrderState() != OrderState.APPROVED) {
+        throw new UnsupportedStateTransitionException(order.getOrderState());
+      }
+      status.setRollbackOnly();
+      return null;
+    });
+
     // Step 1: Find an available courier via HTTP (non-transactional)
     List<AvailableCourierDTO> couriers = courierServiceClient.findAllAvailable();
+    if (couriers.isEmpty()) {
+      throw new RuntimeException("No available couriers to accept order " + orderId);
+    }
     AvailableCourierDTO selectedCourier = couriers.get(random.nextInt(couriers.size()));
 
     // Step 2: Add PICKUP and DROPOFF actions via HTTP (non-transactional)
@@ -113,6 +129,8 @@ public class OrderService {
 
     // Step 3: Update the order in a transactional context using TransactionTemplate
     // (self-invocation of @Transactional methods doesn't work with Spring proxies)
+    // Note: if the DB write fails after the courier service has been updated,
+    // the courier actions cannot be rolled back atomically (eventual consistency trade-off).
     transactionTemplate.execute(status -> {
       Order order = tryToFindOrder(orderId);
       order.acceptTicket(readyBy);
