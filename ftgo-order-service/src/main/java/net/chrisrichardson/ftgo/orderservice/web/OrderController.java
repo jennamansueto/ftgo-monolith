@@ -7,6 +7,7 @@ import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderRequest;
 import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderResponse;
 import net.chrisrichardson.ftgo.orderservice.api.web.OrderAcceptance;
 import net.chrisrichardson.ftgo.orderservice.api.web.ReviseOrderRequest;
+import net.chrisrichardson.ftgo.orderservice.client.RestaurantServiceClient;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderNotFoundException;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderService;
 import org.springframework.http.HttpStatus;
@@ -27,10 +28,12 @@ public class OrderController {
 
   private OrderRepository orderRepository;
 
+  private RestaurantServiceClient restaurantServiceClient;
 
-  public OrderController(OrderService orderService, OrderRepository orderRepository) {
+  public OrderController(OrderService orderService, OrderRepository orderRepository, RestaurantServiceClient restaurantServiceClient) {
     this.orderService = orderService;
     this.orderRepository = orderRepository;
+    this.restaurantServiceClient = restaurantServiceClient;
   }
 
   @RequestMapping(method = RequestMethod.POST)
@@ -66,10 +69,18 @@ public class OrderController {
   }
 
   private GetOrderResponse makeGetOrderResponse(Order order) {
+    String restaurantName = null;
+    if (order.getRestaurantId() != null) {
+      try {
+        restaurantName = restaurantServiceClient.getRestaurantName(order.getRestaurantId());
+      } catch (Exception e) {
+        restaurantName = "Restaurant #" + order.getRestaurantId();
+      }
+    }
     return new GetOrderResponse(order.getId(),
             order.getOrderState().name(),
             order.getOrderTotal(),
-            order.getRestaurant().getName(),
+            restaurantName,
             order.getAssignedCourier() == null ? null : order.getAssignedCourier().getId(),
             order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order)
     );
