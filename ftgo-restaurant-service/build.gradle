@@ -1,12 +1,27 @@
+apply plugin: FtgoServicePlugin
+
+// Re-enable the plain jar task so this module can be used as a library dependency
+// (e.g. testCompile from ftgo-application) alongside the bootJar for standalone deployment.
+jar {
+    enabled = true
+}
+
+bootJar {
+    classifier = 'boot'
+}
+
 dependencies {
     compile project(":common-swagger")
     compile project(":ftgo-restaurant-service-api")
-    compile project(":ftgo-domain")
+    compile project(":ftgo-common")
+    compile project(":ftgo-common-jpa")
 
     compile "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
+    compile "org.flywaydb:flyway-core:5.2.4"
 
+    compile 'mysql:mysql-connector-java:5.1.46'
     compile 'javax.el:javax.el-api:2.2.5'
 
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"

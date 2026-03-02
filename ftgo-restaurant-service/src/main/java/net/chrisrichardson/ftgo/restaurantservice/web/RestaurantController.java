@@ -1,12 +1,17 @@
 package net.chrisrichardson.ftgo.restaurantservice.web;
 
-import net.chrisrichardson.ftgo.domain.Restaurant;
+import net.chrisrichardson.ftgo.restaurantservice.persistence.RestaurantEntity;
+import net.chrisrichardson.ftgo.restaurantservice.persistence.MenuItemEntity;
 import net.chrisrichardson.ftgo.restaurantservice.domain.RestaurantService;
 import net.chrisrichardson.ftgo.restaurantservice.events.CreateRestaurantRequest;
+import net.chrisrichardson.ftgo.restaurantservice.events.MenuItemDTO;
+import net.chrisrichardson.ftgo.restaurantservice.events.RestaurantMenuDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(path = "/restaurants")
@@ -17,7 +22,7 @@ public class RestaurantController {
 
   @RequestMapping(method = RequestMethod.POST)
   public CreateRestaurantResponse create(@RequestBody CreateRestaurantRequest request) {
-    Restaurant r = restaurantService.create(request);
+    RestaurantEntity r = restaurantService.create(request);
     return new CreateRestaurantResponse(r.getId());
   }
 
@@ -28,9 +33,22 @@ public class RestaurantController {
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
   }
 
-  private GetRestaurantResponse makeGetRestaurantResponse(Restaurant r) {
-    return new GetRestaurantResponse(r.getId(), r.getName());
+  @RequestMapping(method = RequestMethod.GET, path = "/{restaurantId}/menu")
+  public ResponseEntity<RestaurantMenuDTO> getMenu(@PathVariable long restaurantId) {
+    return restaurantService.findById(restaurantId)
+            .map(r -> {
+              RestaurantMenuDTO menuDTO = new RestaurantMenuDTO(
+                      r.getMenuItems().stream()
+                              .map(mi -> new MenuItemDTO(mi.getId(), mi.getName(), mi.getPrice()))
+                              .collect(Collectors.toList())
+              );
+              return new ResponseEntity<>(menuDTO, HttpStatus.OK);
+            })
+            .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
   }
 
+  private GetRestaurantResponse makeGetRestaurantResponse(RestaurantEntity r) {
+    return new GetRestaurantResponse(r.getId(), r.getName());
+  }
 
 }

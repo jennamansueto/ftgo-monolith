@@ -1,30 +1,23 @@
 package net.chrisrichardson.ftgo.domain;
 
 import net.chrisrichardson.ftgo.common.Address;
-import org.hibernate.annotations.DynamicUpdate;
 
-import javax.persistence.*;
 import java.util.List;
 import java.util.Optional;
 
-@Entity
-@Table(name = "restaurants")
-@Access(AccessType.FIELD)
-@DynamicUpdate
+/**
+ * Restaurant POJO retained for backward compatibility (used by test helpers
+ * and the Order constructor). No longer a JPA entity — the restaurant service
+ * owns its own RestaurantEntity mapped to the "restaurants" table.
+ */
 public class Restaurant {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   private String name;
 
-  @Embedded
   private Address address;
 
-  @Embedded
-  @ElementCollection
-  @CollectionTable(name = "restaurant_menu_items")
   private List<MenuItem> menuItems;
 
   public Restaurant() {

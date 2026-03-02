@@ -3,7 +3,9 @@ package net.chrisrichardson.ftgo.orderservice.domain;
 import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
+import net.chrisrichardson.ftgo.orderservice.client.RestaurantServiceClient;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
+import net.chrisrichardson.ftgo.restaurantservice.events.RestaurantMenuDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,9 +14,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
-
-import static java.util.stream.Collectors.toList;
 
 @Transactional
 public class OrderService {
@@ -23,55 +22,48 @@ public class OrderService {
 
   private OrderRepository orderRepository;
 
-  private RestaurantRepository restaurantRepository;
-
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
   private CourierRepository courierRepository;
+  private RestaurantServiceClient restaurantServiceClient;
+  private OrderCreationService orderCreationService;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
-                      RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService,
+                      CourierRepository courierRepository,
+                      RestaurantServiceClient restaurantServiceClient,
+                      OrderCreationService orderCreationService) {
 
     this.orderRepository = orderRepository;
-    this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierRepository = courierRepository;
+    this.restaurantServiceClient = restaurantServiceClient;
+    this.orderCreationService = orderCreationService;
   }
 
-  @Transactional
+  /**
+   * Creates an order. The restaurant menu is fetched via HTTP from the restaurant service
+   * BEFORE entering the transactional boundary to avoid holding a DB connection during
+   * network I/O.
+   *
+   * The transactional DB write is delegated to OrderCreationService (a separate Spring bean)
+   * to avoid Spring's self-invocation proxy bypass issue, ensuring @Transactional is honored.
+   *
+   * Note: If the DB write fails after a successful restaurant service call, the restaurant
+   * call cannot be rolled back (distributed transaction trade-off).
+   */
+  @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+    // Fetch restaurant menu via HTTP - outside transaction
+    RestaurantMenuDTO restaurantMenu = restaurantServiceClient.findRestaurantMenu(restaurantId);
 
-
-    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
-
-    Order order = new Order(consumerId, restaurant, orderLineItems);
-
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
-
-    // TODO - charge a credit card too
-
-    orderRepository.save(order);
-
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
-
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
-  }
-
-  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
-    return lineItems.stream().map(li -> {
-      MenuItem om = restaurant.findMenuItem(li.getMenuItemId()).orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
-      return new OrderLineItem(li.getMenuItemId(), om.getName(), om.getPrice(), li.getQuantity());
-    }).collect(toList());
+    // Delegate to separate bean so @Transactional is honored (no self-invocation)
+    return orderCreationService.createOrderTransactional(consumerId, restaurantId, lineItems, restaurantMenu);
   }
 
   @Transactional
