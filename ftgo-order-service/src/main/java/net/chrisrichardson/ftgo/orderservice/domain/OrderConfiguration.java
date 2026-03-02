@@ -5,6 +5,7 @@ import net.chrisrichardson.ftgo.domain.CourierRepository;
 import net.chrisrichardson.ftgo.domain.DomainConfiguration;
 import net.chrisrichardson.ftgo.domain.OrderRepository;
 import net.chrisrichardson.ftgo.domain.RestaurantRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.chrisrichardson.ftgo.orderservice.client.ConsumerServiceClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
@@ -21,11 +23,16 @@ import java.util.Optional;
 public class OrderConfiguration {
 
   @Bean
-  public RestTemplate consumerServiceRestTemplate() {
+  public RestTemplate consumerServiceRestTemplate(ObjectMapper objectMapper) {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
     factory.setConnectTimeout(5000);
     factory.setReadTimeout(10000);
-    return new RestTemplate(factory);
+    RestTemplate restTemplate = new RestTemplate(factory);
+    restTemplate.getMessageConverters().stream()
+        .filter(c -> c instanceof MappingJackson2HttpMessageConverter)
+        .map(c -> (MappingJackson2HttpMessageConverter) c)
+        .forEach(c -> c.setObjectMapper(objectMapper));
+    return restTemplate;
   }
 
   @Bean
