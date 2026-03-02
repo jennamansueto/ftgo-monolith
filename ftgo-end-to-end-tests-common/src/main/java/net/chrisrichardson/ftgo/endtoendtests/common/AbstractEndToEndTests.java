@@ -76,6 +76,10 @@ public abstract class AbstractEndToEndTests {
     return baseUrl(getApplicationPort(), "orders", pathElements);
   }
 
+  private String courierBaseUrl(String... pathElements) {
+    return baseUrl(getCourierServicePort(), "couriers", pathElements);
+  }
+
   @BeforeClass
   public static void initialize() {
     objectMapper.registerModule(new MoneyModule());
@@ -297,7 +301,7 @@ public abstract class AbstractEndToEndTests {
             body(new CreateCourierRequest(new PersonName("John", "Doe"), new Address("1 Scenic Drive", null, "Oakland", "CA", "94555"))).
             contentType("application/json").
             when().
-            post(baseUrl(getApplicationPort(), "couriers")).
+            post(courierBaseUrl()).
             then().
             statusCode(200)
             .extract()
@@ -309,7 +313,7 @@ public abstract class AbstractEndToEndTests {
             body(new CourierAvailability(true)).
             contentType("application/json").
             when().
-            post(baseUrl(getApplicationPort(), "couriers", Long.toString(courierId), "availability")).
+            post(courierBaseUrl(Long.toString(courierId), "availability")).
             then().
             statusCode(200);
   }
@@ -331,8 +335,6 @@ public abstract class AbstractEndToEndTests {
               get(orderBaseUrl(Long.toString(orderId))).
               then().
               statusCode(200)
-              .body("courierActions[0].type", equalTo("PICKUP"))
-              .body("courierActions[1].type", equalTo("DROPOFF"))
               .extract()
               .path("assignedCourier");
       assertThat(assignedCourier).isGreaterThan(0);
@@ -341,11 +343,11 @@ public abstract class AbstractEndToEndTests {
 
     given().
             when().
-            get(baseUrl(getApplicationPort(), "couriers", Long.toString(courierId))).
+            get(courierBaseUrl(Long.toString(courierId))).
             then().
             statusCode(200)
-            .body("plan.actions[0].type", equalTo("PICKUP"))
-            .body("plan.actions[1].type", equalTo("DROPOFF"));
+            .body("actions[0].type", equalTo("PICKUP"))
+            .body("actions[1].type", equalTo("DROPOFF"));
 
   }
 
@@ -384,4 +386,8 @@ public abstract class AbstractEndToEndTests {
   public abstract String getHost();
 
   public abstract int getApplicationPort();
+
+  public int getCourierServicePort() {
+    return 8084;
+  }
 }

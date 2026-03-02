@@ -3,6 +3,8 @@ package net.chrisrichardson.ftgo.orderservice.domain;
 import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
+import net.chrisrichardson.ftgo.orderservice.client.AvailableCourierDTO;
+import net.chrisrichardson.ftgo.orderservice.client.CourierServiceClient;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +14,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
-@Transactional
 public class OrderService {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
@@ -28,19 +28,19 @@ public class OrderService {
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
-  private CourierRepository courierRepository;
+  private CourierServiceClient courierServiceClient;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService, CourierServiceClient courierServiceClient) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
-    this.courierRepository = courierRepository;
+    this.courierServiceClient = courierServiceClient;
   }
 
   @Transactional
@@ -90,23 +90,32 @@ public class OrderService {
     return order;
   }
 
+  /**
+   * Accepts an order and schedules delivery.
+   * The HTTP call to the courier service is made BEFORE the transactional DB work
+   * to avoid holding a DB connection idle during network I/O.
+   *
+   * Note: if the DB write fails after the courier service has been updated,
+   * the courier actions cannot be rolled back atomically (eventual consistency trade-off).
+   */
   public void accept(long orderId, LocalDateTime readyBy) {
-    Order order = tryToFindOrder(orderId);
-    order.acceptTicket(readyBy);
-    scheduleDelivery(order, readyBy);
+    // Step 1: Find an available courier via HTTP (non-transactional)
+    List<AvailableCourierDTO> couriers = courierServiceClient.findAllAvailable();
+    AvailableCourierDTO selectedCourier = couriers.get(random.nextInt(couriers.size()));
+
+    // Step 2: Add PICKUP and DROPOFF actions via HTTP (non-transactional)
+    courierServiceClient.addAction(selectedCourier.getId(), "PICKUP", orderId, null);
+    courierServiceClient.addAction(selectedCourier.getId(), "DROPOFF", orderId, readyBy.plusMinutes(30));
+
+    // Step 3: Update the order in a transactional context
+    acceptOrderTransactional(orderId, readyBy, selectedCourier.getId());
   }
 
-  public void scheduleDelivery(Order order, LocalDateTime readyBy) {
-
-    // Stupid implementation
-
-    List<Courier> couriers = courierRepository.findAllAvailable();
-    Courier courier = couriers.get(random.nextInt(couriers.size()));
-    courier.addAction(Action.makePickup(order));
-    courier.addAction(Action.makeDropoff(order, readyBy.plusMinutes(30)));
-
-    order.schedule(courier);
-
+  @Transactional
+  public void acceptOrderTransactional(long orderId, LocalDateTime readyBy, long courierId) {
+    Order order = tryToFindOrder(orderId);
+    order.acceptTicket(readyBy);
+    order.scheduleWithCourierId(courierId);
   }
 
 
