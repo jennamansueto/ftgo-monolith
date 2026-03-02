@@ -47,9 +47,12 @@ public class OrderService {
   }
 
   /**
-   * Creates an order. This method is NOT transactional so that the HTTP call
-   * to validate the consumer does not hold a DB connection during network I/O.
-   * The actual DB write is performed in the @Transactional persistOrder() method.
+   * Creates an order. The flow is:
+   * 1. Load restaurant and build Order in a read-only transaction (prepareOrder)
+   *    — ensures lazy collections like menuItems are initialized within a session
+   * 2. Validate consumer via HTTP — no transaction active, so no DB connection is
+   *    held during network I/O
+   * 3. Persist the order in a write transaction (persistOrder)
    *
    * Note: if the DB write fails after a successful consumer validation,
    * the validation cannot be rolled back (eventual consistency trade-off).
@@ -57,26 +60,16 @@ public class OrderService {
   @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+    // Step 1: load restaurant & build order in read-only transaction
+    Order order = orderPersistenceService.prepareOrder(consumerId, restaurantId, lineItems);
 
-    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
-
-    Order order = new Order(consumerId, restaurant, orderLineItems);
-
-    // Validate consumer via HTTP - no transaction active here
+    // Step 2: validate consumer via HTTP — no transaction active here
     consumerServiceClient.validateOrderForConsumer(consumerId, order.getOrderTotal());
 
     // TODO - charge a credit card too
 
+    // Step 3: persist in write transaction
     return orderPersistenceService.persistOrder(order);
-  }
-
-  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
-    return lineItems.stream().map(li -> {
-      MenuItem om = restaurant.findMenuItem(li.getMenuItemId()).orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
-      return new OrderLineItem(li.getMenuItemId(), om.getName(), om.getPrice(), li.getQuantity());
-    }).collect(toList());
   }
 
   @Transactional
