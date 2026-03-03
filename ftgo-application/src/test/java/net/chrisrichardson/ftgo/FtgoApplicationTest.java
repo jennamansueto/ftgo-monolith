@@ -21,7 +21,7 @@ public class FtgoApplicationTest extends AbstractEndToEndTests {
 
   @Configuration
   @EnableAutoConfiguration
-  @ComponentScan
+  @ComponentScan(basePackages = {"net.chrisrichardson.ftgo.consumerservice.standalone"})
   @Import({ConsumerServiceConfiguration.class,
           OrderServiceConfiguration.class,
           RestaurantServiceConfiguration.class})

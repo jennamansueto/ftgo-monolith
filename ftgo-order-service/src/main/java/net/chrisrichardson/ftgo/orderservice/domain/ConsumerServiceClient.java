@@ -1,9 +1,7 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import net.chrisrichardson.ftgo.common.Money;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -30,6 +28,9 @@ public class ConsumerServiceClient {
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
         throw new ConsumerNotFoundException(consumerId);
+      }
+      if (e.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
+        throw new ConsumerVerificationFailedException(consumerId);
       }
       throw e;
     }

@@ -9,5 +9,6 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
 
     testCompile project(":ftgo-consumer-service")
+    testCompile project(":ftgo-consumer-service-standalone")
     testCompile project(":ftgo-end-to-end-tests-common")
 }
