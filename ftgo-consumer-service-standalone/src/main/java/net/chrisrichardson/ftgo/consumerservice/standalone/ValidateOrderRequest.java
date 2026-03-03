@@ -16,4 +16,8 @@ public class ValidateOrderRequest {
   public BigDecimal getOrderTotal() {
     return orderTotal;
   }
+
+  public void setOrderTotal(BigDecimal orderTotal) {
+    this.orderTotal = orderTotal;
+  }
 }
