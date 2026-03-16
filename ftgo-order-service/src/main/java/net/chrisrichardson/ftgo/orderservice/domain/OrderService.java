@@ -15,7 +15,6 @@ import java.util.Random;
 
 import static java.util.stream.Collectors.toList;
 
-@Transactional
 public class OrderService {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
@@ -92,6 +91,7 @@ public class OrderService {
     return order;
   }
 
+  @Transactional
   public void accept(long orderId, LocalDateTime readyBy) {
     Order order = tryToFindOrder(orderId);
     order.acceptTicket(readyBy);
