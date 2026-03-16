@@ -99,9 +99,11 @@ public class OrderController {
 
   @RequestMapping(path="/{orderId}/accept", method= RequestMethod.POST)
   public ResponseEntity<String> accept(@PathVariable long orderId, @RequestBody OrderAcceptance orderAcceptance) {
-    // Step 1: HTTP call to courier service (non-transactional)
+    // Step 1: Validate order can be accepted (read-only transaction)
+    orderService.validateOrderCanBeAccepted(orderId, orderAcceptance.getReadyBy());
+    // Step 2: HTTP call to courier service (non-transactional)
     long courierId = courierServiceClient.scheduleDelivery(orderId, orderAcceptance.getReadyBy());
-    // Step 2: DB write (transactional via Spring proxy)
+    // Step 3: DB write (transactional via Spring proxy)
     orderService.acceptAndSchedule(orderId, orderAcceptance.getReadyBy(), courierId);
     return new ResponseEntity<>(HttpStatus.OK);
   }

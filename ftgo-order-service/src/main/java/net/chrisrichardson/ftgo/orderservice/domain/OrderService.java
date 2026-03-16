@@ -1,6 +1,7 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import net.chrisrichardson.ftgo.common.UnsupportedStateTransitionException;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
@@ -83,6 +84,17 @@ public class OrderService {
     Order order = tryToFindOrder(orderId);
     order.revise(orderRevision);
     return order;
+  }
+
+  @Transactional(readOnly = true)
+  public void validateOrderCanBeAccepted(long orderId, LocalDateTime readyBy) {
+    Order order = tryToFindOrder(orderId);
+    if (order.getOrderState() != OrderState.APPROVED) {
+      throw new UnsupportedStateTransitionException(order.getOrderState());
+    }
+    if (!LocalDateTime.now().isBefore(readyBy)) {
+      throw new IllegalArgumentException("readyBy is not in the future");
+    }
   }
 
   @Transactional

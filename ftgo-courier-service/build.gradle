@@ -1,5 +1,14 @@
 apply plugin: FtgoServicePlugin
 
+// Enable plain JAR so other modules can use this as a library dependency
+jar {
+    enabled = true
+}
+
+bootJar {
+    classifier = 'boot'
+}
+
 dependencies {
     compile project(":ftgo-courier-service-api")
 
