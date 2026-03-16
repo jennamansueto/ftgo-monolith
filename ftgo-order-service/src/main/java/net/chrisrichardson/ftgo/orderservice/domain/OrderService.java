@@ -1,7 +1,5 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
@@ -10,68 +8,39 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
-import static java.util.stream.Collectors.toList;
-
-@Transactional
 public class OrderService {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
   private OrderRepository orderRepository;
 
-  private RestaurantRepository restaurantRepository;
+  private RestaurantServiceClient restaurantServiceClient;
 
-  private Optional<MeterRegistry> meterRegistry;
+  private OrderTransactionHelper orderTransactionHelper;
 
-  private ConsumerService consumerService;
   private CourierRepository courierRepository;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
-                      RestaurantRepository restaurantRepository,
-                      Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      RestaurantServiceClient restaurantServiceClient,
+                      OrderTransactionHelper orderTransactionHelper,
+                      CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
-    this.restaurantRepository = restaurantRepository;
-    this.meterRegistry = meterRegistry;
-    this.consumerService = consumerService;
+    this.restaurantServiceClient = restaurantServiceClient;
+    this.orderTransactionHelper = orderTransactionHelper;
     this.courierRepository = courierRepository;
   }
 
-  @Transactional
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+    // HTTP call outside @Transactional boundary to avoid holding DB connection during network I/O
+    Restaurant restaurant = restaurantServiceClient.findRestaurant(restaurantId);
 
-
-    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
-
-    Order order = new Order(consumerId, restaurant, orderLineItems);
-
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
-
-    // TODO - charge a credit card too
-
-    orderRepository.save(order);
-
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
-
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
-  }
-
-  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
-    return lineItems.stream().map(li -> {
-      MenuItem om = restaurant.findMenuItem(li.getMenuItemId()).orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
-      return new OrderLineItem(li.getMenuItemId(), om.getName(), om.getPrice(), li.getQuantity());
-    }).collect(toList());
+    // Delegate to separate bean so Spring AOP can intercept @Transactional
+    return orderTransactionHelper.createOrderInTransaction(consumerId, restaurant, lineItems);
   }
 
   @Transactional
@@ -90,6 +59,7 @@ public class OrderService {
     return order;
   }
 
+  @Transactional
   public void accept(long orderId, LocalDateTime readyBy) {
     Order order = tryToFindOrder(orderId);
     order.acceptTicket(readyBy);

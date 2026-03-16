@@ -1,7 +1,6 @@
-package net.chrisrichardson.ftgo;
+package net.chrisrichardson.ftgo.restaurantservice.main;
 
-import net.chrisrichardson.ftgo.consumerservice.main.ConsumerServiceConfiguration;
-import net.chrisrichardson.ftgo.orderservice.main.OrderServiceConfiguration;
+import net.chrisrichardson.ftgo.restaurantservice.RestaurantServiceConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
@@ -11,11 +10,10 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @EnableAutoConfiguration
 @ComponentScan
-@Import({ConsumerServiceConfiguration.class,
-        OrderServiceConfiguration.class})
-public class FtgoApplicationMain {
+@Import(RestaurantServiceConfiguration.class)
+public class RestaurantServiceMain {
 
   public static void main(String[] args) {
-    SpringApplication.run(FtgoApplicationMain.class, args);
+    SpringApplication.run(RestaurantServiceMain.class, args);
   }
 }

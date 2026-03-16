@@ -3,10 +3,14 @@ package net.chrisrichardson.ftgo.restaurantservice.web;
 import net.chrisrichardson.ftgo.domain.Restaurant;
 import net.chrisrichardson.ftgo.restaurantservice.domain.RestaurantService;
 import net.chrisrichardson.ftgo.restaurantservice.events.CreateRestaurantRequest;
+import net.chrisrichardson.ftgo.restaurantservice.events.GetRestaurantWithMenuItemsResponse;
+import net.chrisrichardson.ftgo.restaurantservice.events.MenuItemDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(path = "/restaurants")
@@ -28,9 +32,24 @@ public class RestaurantController {
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
   }
 
+  @RequestMapping(method = RequestMethod.GET, path = "/{restaurantId}/withMenuItems")
+  public ResponseEntity<GetRestaurantWithMenuItemsResponse> getWithMenuItems(@PathVariable long restaurantId) {
+    return restaurantService.findById(restaurantId)
+            .map(r -> new ResponseEntity<>(makeGetRestaurantWithMenuItemsResponse(r), HttpStatus.OK))
+            .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+  }
+
   private GetRestaurantResponse makeGetRestaurantResponse(Restaurant r) {
     return new GetRestaurantResponse(r.getId(), r.getName());
   }
 
-
+  private GetRestaurantWithMenuItemsResponse makeGetRestaurantWithMenuItemsResponse(Restaurant r) {
+    return new GetRestaurantWithMenuItemsResponse(
+            r.getId(),
+            r.getName(),
+            r.getMenuItems().stream()
+                    .map(mi -> new MenuItemDTO(mi.getId(), mi.getName(), mi.getPrice()))
+                    .collect(Collectors.toList())
+    );
+  }
 }
