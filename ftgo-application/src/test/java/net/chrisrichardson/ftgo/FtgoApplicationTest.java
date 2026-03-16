@@ -23,7 +23,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes=FtgoApplicationTest.Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "consumer.service.url=http://localhost:9999")
+        properties = {"consumer.service.url=http://localhost:9999", "spring.flyway.enabled=false"})
 public class FtgoApplicationTest extends AbstractEndToEndTests {
 
   @Configuration
