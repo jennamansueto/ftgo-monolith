@@ -8,3 +8,11 @@ flyway {
     password = 'rootpassword'
     schemas = ['ftgo']
 }
+
+task flywayMigrateRestaurant(type: org.flywaydb.gradle.task.FlywayMigrateTask) {
+    url = "jdbc:mysql://${System.getenv('DOCKER_HOST_IP') ?: 'localhost'}/ftgo_restaurant_service?useSSL=false"
+    user = 'root'
+    password = 'rootpassword'
+    schemas = ['ftgo_restaurant_service']
+    locations = ["filesystem:${project.rootDir}/ftgo-restaurant-service/src/main/resources/db/migration"]
+}
