@@ -1,7 +1,5 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
@@ -10,10 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
-
-import static java.util.stream.Collectors.toList;
 
 public class OrderService {
 
@@ -23,21 +18,19 @@ public class OrderService {
 
   private RestaurantServiceClient restaurantServiceClient;
 
-  private Optional<MeterRegistry> meterRegistry;
+  private OrderTransactionHelper orderTransactionHelper;
 
-  private ConsumerService consumerService;
   private CourierRepository courierRepository;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantServiceClient restaurantServiceClient,
-                      Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      OrderTransactionHelper orderTransactionHelper,
+                      CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
     this.restaurantServiceClient = restaurantServiceClient;
-    this.meterRegistry = meterRegistry;
-    this.consumerService = consumerService;
+    this.orderTransactionHelper = orderTransactionHelper;
     this.courierRepository = courierRepository;
   }
 
@@ -46,34 +39,8 @@ public class OrderService {
     // HTTP call outside @Transactional boundary to avoid holding DB connection during network I/O
     Restaurant restaurant = restaurantServiceClient.findRestaurant(restaurantId);
 
-    return createOrderInTransaction(consumerId, restaurant, lineItems);
-  }
-
-  @Transactional
-  public Order createOrderInTransaction(long consumerId, Restaurant restaurant,
-                                        List<MenuItemIdAndQuantity> lineItems) {
-    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
-
-    Order order = new Order(consumerId, restaurant, orderLineItems);
-
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
-
-    // TODO - charge a credit card too
-
-    orderRepository.save(order);
-
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
-
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
-  }
-
-  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
-    return lineItems.stream().map(li -> {
-      MenuItem om = restaurant.findMenuItem(li.getMenuItemId()).orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
-      return new OrderLineItem(li.getMenuItemId(), om.getName(), om.getPrice(), li.getQuantity());
-    }).collect(toList());
+    // Delegate to separate bean so Spring AOP can intercept @Transactional
+    return orderTransactionHelper.createOrderInTransaction(consumerId, restaurant, lineItems);
   }
 
   @Transactional

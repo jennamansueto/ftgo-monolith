@@ -35,14 +35,21 @@ public class OrderConfiguration {
   }
 
   @Bean
+  public OrderTransactionHelper orderTransactionHelper(OrderRepository orderRepository,
+                                                       ConsumerService consumerService,
+                                                       Optional<MeterRegistry> meterRegistry) {
+    return new OrderTransactionHelper(orderRepository, consumerService, meterRegistry);
+  }
+
+  @Bean
   public OrderService orderService(RestaurantServiceClient restaurantServiceClient,
                                    OrderRepository orderRepository,
-                                   Optional<MeterRegistry> meterRegistry,
-                                   ConsumerService consumerService, CourierRepository courierRepository) {
+                                   OrderTransactionHelper orderTransactionHelper,
+                                   CourierRepository courierRepository) {
     return new OrderService(orderRepository,
             restaurantServiceClient,
-            meterRegistry,
-            consumerService, courierRepository);
+            orderTransactionHelper,
+            courierRepository);
   }
 
   @Bean
