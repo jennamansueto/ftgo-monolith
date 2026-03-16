@@ -3,6 +3,7 @@ package net.chrisrichardson.ftgo.orderservice.domain;
 import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
+import net.chrisrichardson.ftgo.orderservice.client.CourierServiceClient;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,8 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -28,19 +27,19 @@ public class OrderService {
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
-  private CourierRepository courierRepository;
-  private Random random = new Random();
+  private CourierServiceClient courierServiceClient;
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService,
+                      CourierServiceClient courierServiceClient) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
-    this.courierRepository = courierRepository;
+    this.courierServiceClient = courierServiceClient;
   }
 
   @Transactional
@@ -90,23 +89,26 @@ public class OrderService {
     return order;
   }
 
+  /**
+   * Accepts an order and schedules delivery.
+   * The HTTP call to the courier service is made OUTSIDE the transactional boundary
+   * to avoid holding a DB connection idle during network I/O.
+   * Trade-off: if the DB write fails after a successful remote call, the courier
+   * assignment cannot be rolled back atomically.
+   */
   public void accept(long orderId, LocalDateTime readyBy) {
-    Order order = tryToFindOrder(orderId);
-    order.acceptTicket(readyBy);
-    scheduleDelivery(order, readyBy);
+    // Step 1: HTTP call to courier service (non-transactional)
+    long courierId = courierServiceClient.scheduleDelivery(orderId, readyBy);
+
+    // Step 2: DB write (transactional)
+    acceptAndSchedule(orderId, readyBy, courierId);
   }
 
-  public void scheduleDelivery(Order order, LocalDateTime readyBy) {
-
-    // Stupid implementation
-
-    List<Courier> couriers = courierRepository.findAllAvailable();
-    Courier courier = couriers.get(random.nextInt(couriers.size()));
-    courier.addAction(Action.makePickup(order));
-    courier.addAction(Action.makeDropoff(order, readyBy.plusMinutes(30)));
-
-    order.schedule(courier);
-
+  @Transactional
+  public void acceptAndSchedule(long orderId, LocalDateTime readyBy, long courierId) {
+    Order order = tryToFindOrder(orderId);
+    order.acceptTicket(readyBy);
+    order.schedule(courierId);
   }
 
 
