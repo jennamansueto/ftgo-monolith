@@ -1,5 +1,13 @@
 apply plugin: FtgoServicePlugin
 
+jar {
+    enabled = true
+}
+
+bootJar {
+    classifier = 'boot'
+}
+
 dependencies {
     compile project(":common-swagger")
     compile project(":ftgo-consumer-service-api")
