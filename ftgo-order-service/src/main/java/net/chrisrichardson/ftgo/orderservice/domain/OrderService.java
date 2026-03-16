@@ -26,18 +26,22 @@ public class OrderService {
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerServiceClient consumerServiceClient;
+  private OrderPersistenceService orderPersistenceService;
   private CourierRepository courierRepository;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerServiceClient consumerServiceClient, CourierRepository courierRepository) {
+                      ConsumerServiceClient consumerServiceClient,
+                      OrderPersistenceService orderPersistenceService,
+                      CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerServiceClient = consumerServiceClient;
+    this.orderPersistenceService = orderPersistenceService;
     this.courierRepository = courierRepository;
   }
 
@@ -54,18 +58,9 @@ public class OrderService {
     // This avoids holding a DB connection idle during the remote HTTP call.
     consumerServiceClient.validateOrderForConsumer(consumerId, order.getOrderTotal());
 
-    return saveOrder(order);
-  }
-
-  @Transactional
-  public Order saveOrder(Order order) {
-    orderRepository.save(order);
-
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
-
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
+    // Delegate to a separate bean so @Transactional is applied by the Spring proxy.
+    // Self-invocation (this.saveOrder()) would bypass the proxy.
+    return orderPersistenceService.saveOrder(order);
   }
 
   private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
