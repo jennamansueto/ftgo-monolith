@@ -15,8 +15,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes=FtgoApplicationTest.Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = "consumer.service.url=http://localhost:${local.server.port}")
+@SpringBootTest(classes=FtgoApplicationTest.Config.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@TestPropertySource(properties = {"server.port=8888", "consumer.service.url=http://localhost:8888"})
 public class FtgoApplicationTest extends AbstractEndToEndTests {
 
   @Configuration
