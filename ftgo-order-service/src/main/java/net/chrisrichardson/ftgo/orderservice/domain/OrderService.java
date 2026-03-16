@@ -1,6 +1,7 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import net.chrisrichardson.ftgo.common.UnsupportedStateTransitionException;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
@@ -11,8 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -28,19 +27,16 @@ public class OrderService {
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
-  private CourierRepository courierRepository;
-  private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
-    this.courierRepository = courierRepository;
   }
 
   @Transactional
@@ -90,23 +86,22 @@ public class OrderService {
     return order;
   }
 
-  public void accept(long orderId, LocalDateTime readyBy) {
+  @Transactional(readOnly = true)
+  public void validateOrderCanBeAccepted(long orderId, LocalDateTime readyBy) {
     Order order = tryToFindOrder(orderId);
-    order.acceptTicket(readyBy);
-    scheduleDelivery(order, readyBy);
+    if (order.getOrderState() != OrderState.APPROVED) {
+      throw new UnsupportedStateTransitionException(order.getOrderState());
+    }
+    if (!LocalDateTime.now().isBefore(readyBy)) {
+      throw new IllegalArgumentException("readyBy is not in the future");
+    }
   }
 
-  public void scheduleDelivery(Order order, LocalDateTime readyBy) {
-
-    // Stupid implementation
-
-    List<Courier> couriers = courierRepository.findAllAvailable();
-    Courier courier = couriers.get(random.nextInt(couriers.size()));
-    courier.addAction(Action.makePickup(order));
-    courier.addAction(Action.makeDropoff(order, readyBy.plusMinutes(30)));
-
-    order.schedule(courier);
-
+  @Transactional
+  public void acceptAndSchedule(long orderId, LocalDateTime readyBy, long courierId) {
+    Order order = tryToFindOrder(orderId);
+    order.acceptTicket(readyBy);
+    order.schedule(courierId);
   }
 
 

@@ -1,6 +1,7 @@
 package net.chrisrichardson.ftgo;
 
 import net.chrisrichardson.ftgo.consumerservice.main.ConsumerServiceConfiguration;
+import net.chrisrichardson.ftgo.courierservice.web.CourierWebConfiguration;
 import net.chrisrichardson.ftgo.endtoendtests.common.AbstractEndToEndTests;
 import net.chrisrichardson.ftgo.orderservice.main.OrderServiceConfiguration;
 import net.chrisrichardson.ftgo.restaurantservice.RestaurantServiceConfiguration;
@@ -14,7 +15,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes=FtgoApplicationTest.Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes=FtgoApplicationTest.Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "courier.service.url=http://localhost:${local.server.port}")
 public class FtgoApplicationTest extends AbstractEndToEndTests {
 
   @Configuration
@@ -22,7 +24,8 @@ public class FtgoApplicationTest extends AbstractEndToEndTests {
   @ComponentScan
   @Import({ConsumerServiceConfiguration.class,
           OrderServiceConfiguration.class,
-          RestaurantServiceConfiguration.class})
+          RestaurantServiceConfiguration.class,
+          CourierWebConfiguration.class})
   public static class Config {
 
   }
@@ -37,6 +40,11 @@ public class FtgoApplicationTest extends AbstractEndToEndTests {
 
   @Override
   public int getApplicationPort() {
+    return port;
+  }
+
+  @Override
+  public int getCourierServicePort() {
     return port;
   }
 }
