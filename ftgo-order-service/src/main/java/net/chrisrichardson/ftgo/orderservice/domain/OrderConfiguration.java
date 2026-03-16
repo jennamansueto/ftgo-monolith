@@ -12,7 +12,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.chrisrichardson.ftgo.common.MoneyModule;
 
 import java.util.Optional;
 
@@ -25,7 +28,13 @@ public class OrderConfiguration {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
     factory.setConnectTimeout(5000);
     factory.setReadTimeout(10000);
-    return new RestTemplate(factory);
+    RestTemplate restTemplate = new RestTemplate(factory);
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new MoneyModule());
+    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
+    restTemplate.getMessageConverters().removeIf(c -> c instanceof MappingJackson2HttpMessageConverter);
+    restTemplate.getMessageConverters().add(converter);
+    return restTemplate;
   }
 
   @Bean
