@@ -47,7 +47,7 @@ public class OrderService {
 
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
+    Restaurant restaurant = restaurantRepository.findWithMenuItemsById(restaurantId)
             .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
 
     List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
