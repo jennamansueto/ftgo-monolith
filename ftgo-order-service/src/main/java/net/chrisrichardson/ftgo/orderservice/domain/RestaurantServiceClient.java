@@ -33,6 +33,10 @@ public class RestaurantServiceClient {
       GetRestaurantWithMenuItemsResponse body =
               restTemplate.getForObject(url, GetRestaurantWithMenuItemsResponse.class, restaurantId);
 
+      if (body == null) {
+        throw new RestaurantNotFoundException(restaurantId);
+      }
+
       List<MenuItem> menuItems = body.getMenuItems().stream()
               .map(dto -> new MenuItem(dto.getId(), dto.getName(), dto.getPrice()))
               .collect(Collectors.toList());
