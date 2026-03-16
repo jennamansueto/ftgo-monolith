@@ -1,6 +1,6 @@
 package net.chrisrichardson.ftgo;
 
-import net.chrisrichardson.ftgo.consumerservice.main.ConsumerServiceConfiguration;
+import net.chrisrichardson.ftgo.consumerservice.web.ConsumerWebConfiguration;
 import net.chrisrichardson.ftgo.endtoendtests.common.AbstractEndToEndTests;
 import net.chrisrichardson.ftgo.orderservice.main.OrderServiceConfiguration;
 import net.chrisrichardson.ftgo.restaurantservice.RestaurantServiceConfiguration;
@@ -11,16 +11,18 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes=FtgoApplicationTest.Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = "consumer.service.url=http://localhost:${local.server.port}")
 public class FtgoApplicationTest extends AbstractEndToEndTests {
 
   @Configuration
   @EnableAutoConfiguration
   @ComponentScan
-  @Import({ConsumerServiceConfiguration.class,
+  @Import({ConsumerWebConfiguration.class,
           OrderServiceConfiguration.class,
           RestaurantServiceConfiguration.class})
   public static class Config {
