@@ -12,6 +12,8 @@ dependencies {
 
     compile 'org.flywaydb:flyway-core:5.2.4'
 
+    compile 'org.javassist:javassist:3.27.0-GA'
+
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
     testCompile 'com.h2database:h2:1.4.197'
 }
