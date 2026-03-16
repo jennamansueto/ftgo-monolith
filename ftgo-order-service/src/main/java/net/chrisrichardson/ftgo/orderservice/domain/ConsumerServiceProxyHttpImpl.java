@@ -6,7 +6,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -30,10 +29,7 @@ public class ConsumerServiceProxyHttpImpl implements ConsumerServiceProxy {
     HttpEntity<ValidateOrderForConsumerRequest> entity = new HttpEntity<>(request, headers);
 
     try {
-      ResponseEntity<Void> response = restTemplate.postForEntity(url, entity, Void.class);
-      if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
-        throw new ConsumerNotFoundException(consumerId);
-      }
+      restTemplate.postForEntity(url, entity, Void.class);
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
         throw new ConsumerNotFoundException(consumerId);
