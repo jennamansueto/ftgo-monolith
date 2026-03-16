@@ -7,6 +7,7 @@ import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderRequest;
 import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderResponse;
 import net.chrisrichardson.ftgo.orderservice.api.web.OrderAcceptance;
 import net.chrisrichardson.ftgo.orderservice.api.web.ReviseOrderRequest;
+import net.chrisrichardson.ftgo.orderservice.client.CourierServiceClient;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderNotFoundException;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderService;
 import org.springframework.http.HttpStatus;
@@ -27,10 +28,12 @@ public class OrderController {
 
   private OrderRepository orderRepository;
 
+  private CourierServiceClient courierServiceClient;
 
-  public OrderController(OrderService orderService, OrderRepository orderRepository) {
+  public OrderController(OrderService orderService, OrderRepository orderRepository, CourierServiceClient courierServiceClient) {
     this.orderService = orderService;
     this.orderRepository = orderRepository;
+    this.courierServiceClient = courierServiceClient;
   }
 
   @RequestMapping(method = RequestMethod.POST)
@@ -96,7 +99,10 @@ public class OrderController {
 
   @RequestMapping(path="/{orderId}/accept", method= RequestMethod.POST)
   public ResponseEntity<String> accept(@PathVariable long orderId, @RequestBody OrderAcceptance orderAcceptance) {
-    orderService.accept(orderId, orderAcceptance.getReadyBy());
+    // Step 1: HTTP call to courier service (non-transactional)
+    long courierId = courierServiceClient.scheduleDelivery(orderId, orderAcceptance.getReadyBy());
+    // Step 2: DB write (transactional via Spring proxy)
+    orderService.acceptAndSchedule(orderId, orderAcceptance.getReadyBy(), courierId);
     return new ResponseEntity<>(HttpStatus.OK);
   }
 

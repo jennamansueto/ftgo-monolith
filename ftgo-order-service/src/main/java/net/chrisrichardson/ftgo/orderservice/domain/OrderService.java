@@ -3,7 +3,6 @@ package net.chrisrichardson.ftgo.orderservice.domain;
 import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
-import net.chrisrichardson.ftgo.orderservice.client.CourierServiceClient;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,19 +26,16 @@ public class OrderService {
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
-  private CourierServiceClient courierServiceClient;
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService,
-                      CourierServiceClient courierServiceClient) {
+                      ConsumerService consumerService) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
-    this.courierServiceClient = courierServiceClient;
   }
 
   @Transactional
@@ -87,21 +83,6 @@ public class OrderService {
     Order order = tryToFindOrder(orderId);
     order.revise(orderRevision);
     return order;
-  }
-
-  /**
-   * Accepts an order and schedules delivery.
-   * The HTTP call to the courier service is made OUTSIDE the transactional boundary
-   * to avoid holding a DB connection idle during network I/O.
-   * Trade-off: if the DB write fails after a successful remote call, the courier
-   * assignment cannot be rolled back atomically.
-   */
-  public void accept(long orderId, LocalDateTime readyBy) {
-    // Step 1: HTTP call to courier service (non-transactional)
-    long courierId = courierServiceClient.scheduleDelivery(orderId, readyBy);
-
-    // Step 2: DB write (transactional)
-    acceptAndSchedule(orderId, readyBy, courierId);
   }
 
   @Transactional

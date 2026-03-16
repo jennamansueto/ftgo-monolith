@@ -39,13 +39,11 @@ public class OrderConfiguration {
   public OrderService orderService(RestaurantRepository restaurantRepository,
                                    OrderRepository orderRepository,
                                    Optional<MeterRegistry> meterRegistry,
-                                   ConsumerService consumerService,
-                                   CourierServiceClient courierServiceClient) {
+                                   ConsumerService consumerService) {
     return new OrderService(orderRepository,
             restaurantRepository,
             meterRegistry,
-            consumerService,
-            courierServiceClient);
+            consumerService);
   }
 
   @Bean

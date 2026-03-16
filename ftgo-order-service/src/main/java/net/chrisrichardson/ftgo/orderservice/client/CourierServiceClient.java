@@ -31,7 +31,11 @@ public class CourierServiceClient {
               courierServiceUrl + "/couriers/scheduleDelivery",
               request,
               ScheduleDeliveryResponse.class);
-      return response.getBody().getCourierId();
+      ScheduleDeliveryResponse body = response.getBody();
+      if (body == null) {
+        throw new CourierServiceException("Empty response from courier service for order " + orderId, null);
+      }
+      return body.getCourierId();
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
         logger.error("No courier available for order {}", orderId);
