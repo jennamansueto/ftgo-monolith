@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @EnableAutoConfiguration
 @ComponentScan
-@EntityScan
+@EntityScan(basePackages = "net.chrisrichardson.ftgo.consumerservice.domain")
 @Import({ConsumerWebConfiguration.class, CommonSwaggerConfiguration.class})
 public class ConsumerServiceConfiguration {
 }

@@ -1,5 +1,7 @@
 package net.chrisrichardson.ftgo.consumerservice.web;
 
+import net.chrisrichardson.ftgo.common.Money;
+import net.chrisrichardson.ftgo.consumerservice.api.ValidateOrderForConsumerRequest;
 import net.chrisrichardson.ftgo.consumerservice.api.web.CreateConsumerRequest;
 import net.chrisrichardson.ftgo.consumerservice.api.web.CreateConsumerResponse;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
@@ -25,5 +27,13 @@ public class ConsumerController {
     return consumerService.findById(consumerId)
             .map(consumer -> new ResponseEntity<>(new GetConsumerResponse(consumer.getName()), HttpStatus.OK))
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+  }
+
+  @RequestMapping(method= RequestMethod.POST, path="/{consumerId}/validate")
+  public ResponseEntity<Void> validateOrderForConsumer(
+      @PathVariable long consumerId,
+      @RequestBody ValidateOrderForConsumerRequest request) {
+    consumerService.validateOrderForConsumer(consumerId, new Money(request.getOrderTotal()));
+    return new ResponseEntity<>(HttpStatus.OK);
   }
 }
