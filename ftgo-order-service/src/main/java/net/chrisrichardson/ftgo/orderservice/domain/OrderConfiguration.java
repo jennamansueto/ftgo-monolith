@@ -24,7 +24,7 @@ public class OrderConfiguration {
 
   @Bean
   public ConsumerServiceProxy consumerServiceProxy(RestTemplate restTemplate,
-                                                   @Value("${consumer.service.url:http://localhost:8080}") String consumerServiceUrl) {
+                                                   @Value("${consumer.service.url:http://localhost:8082}") String consumerServiceUrl) {
     return new ConsumerServiceProxy(restTemplate, consumerServiceUrl);
   }
 
