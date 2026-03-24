@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 public class ConsumerServiceProxy {
@@ -31,6 +32,8 @@ public class ConsumerServiceProxy {
       if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
         throw new ConsumerValidationFailedException(consumerId);
       }
+      throw new ConsumerValidationFailedException(consumerId);
+    } catch (RestClientException e) {
       throw new ConsumerValidationFailedException(consumerId);
     }
   }
