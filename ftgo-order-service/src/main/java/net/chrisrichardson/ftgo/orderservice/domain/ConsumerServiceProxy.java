@@ -4,7 +4,6 @@ import net.chrisrichardson.ftgo.common.Money;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -24,10 +23,7 @@ public class ConsumerServiceProxy {
   public void validateOrderForConsumer(long consumerId, Money orderTotal) {
     String url = consumerServiceUrl + "/consumers/" + consumerId + "/validate";
     try {
-      ResponseEntity<Void> response = restTemplate.postForEntity(url, new HttpEntity<>(orderTotal), Void.class);
-      if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
-        throw new ConsumerNotFoundException();
-      }
+      restTemplate.postForEntity(url, new HttpEntity<>(orderTotal), Void.class);
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
         throw new ConsumerNotFoundException();
