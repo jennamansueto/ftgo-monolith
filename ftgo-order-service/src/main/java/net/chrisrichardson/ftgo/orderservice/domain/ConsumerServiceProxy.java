@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 public class ConsumerServiceProxy {
@@ -32,8 +32,8 @@ public class ConsumerServiceProxy {
       if (response.getStatusCode() != HttpStatus.OK) {
         throw new ConsumerValidationFailedException(consumerId);
       }
-    } catch (HttpClientErrorException e) {
-      logger.error("Consumer validation failed for consumerId={}: {}", consumerId, e.getStatusCode());
+    } catch (RestClientException e) {
+      logger.error("Consumer validation failed for consumerId={}: {}", consumerId, e.getMessage());
       throw new ConsumerValidationFailedException(consumerId);
     }
   }

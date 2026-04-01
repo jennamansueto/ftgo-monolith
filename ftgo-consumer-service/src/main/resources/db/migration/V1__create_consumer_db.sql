@@ -11,5 +11,5 @@ create table if not exists hibernate_sequence
   next_val bigint
 ) engine = InnoDB;
 
-insert into hibernate_sequence
+insert ignore into hibernate_sequence
 values (1);
