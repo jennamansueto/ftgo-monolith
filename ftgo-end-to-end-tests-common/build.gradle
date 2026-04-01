@@ -1,11 +1,15 @@
-dependencies {
-    implementation project(":ftgo-consumer-service-api")
-    implementation project(":ftgo-restaurant-service-api")
-    implementation project(":ftgo-order-service-api")
-    implementation project(":ftgo-courier-service-api")
-    implementation "io.eventuate.util:eventuate-util-test:$eventuateUtilVersion"
+plugins {
+    id 'java-library'
+}
 
-    implementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-    implementation "io.rest-assured:rest-assured:$restAssuredVersion"
+dependencies {
+    api project(":ftgo-consumer-service-api")
+    api project(":ftgo-restaurant-service-api")
+    api project(":ftgo-order-service-api")
+    api project(":ftgo-courier-service-api")
+    api "io.eventuate.util:eventuate-util-test:$eventuateUtilVersion"
+
+    api "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+    api "io.rest-assured:rest-assured:$restAssuredVersion"
     implementation "com.jayway.jsonpath:json-path:2.8.0"
 }
