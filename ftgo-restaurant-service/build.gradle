@@ -10,6 +10,6 @@ dependencies {
     implementation 'jakarta.el:jakarta.el-api:3.0.3'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-    testImplementation "io.rest-assured:rest-assured:$restAssuredVersion"
+    testImplementation "com.jayway.restassured:rest-assured:2.9.0"
     testImplementation "com.jayway.jsonpath:json-path:2.3.0"
 }

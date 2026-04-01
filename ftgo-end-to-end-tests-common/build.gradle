@@ -7,6 +7,6 @@ dependencies {
 
 
     api "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-    api "io.rest-assured:rest-assured:$restAssuredVersion"
+    api "com.jayway.restassured:rest-assured:2.9.0"
     api "com.jayway.jsonpath:json-path:2.3.0"
 }
