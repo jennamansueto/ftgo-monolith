@@ -7,6 +7,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static net.chrisrichardson.ftgo.domain.OrderState.*;
 
@@ -29,8 +30,11 @@ public class Order {
 
   private Long consumerId;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  private Restaurant restaurant;
+  @Column(name = "restaurant_id")
+  private Long restaurantId;
+
+  @Column(name = "restaurant_name")
+  private String restaurantName;
 
   @Embedded
   private OrderLineItems orderLineItems;
@@ -58,9 +62,10 @@ public class Order {
   private Order() {
   }
 
-  public Order(long consumerId, Restaurant restaurant, List<OrderLineItem> orderLineItems) {
+  public Order(long consumerId, long restaurantId, String restaurantName, List<OrderLineItem> orderLineItems) {
     this.consumerId = consumerId;
-    this.restaurant = restaurant;
+    this.restaurantId = restaurantId;
+    this.restaurantName = restaurantName;
     this.orderLineItems = new OrderLineItems(orderLineItems);
     this.orderState = APPROVED;
   }
@@ -125,8 +130,12 @@ public class Order {
     return orderState;
   }
 
-  public Restaurant getRestaurant() {
-    return restaurant;
+  public Long getRestaurantId() {
+    return restaurantId;
+  }
+
+  public String getRestaurantName() {
+    return restaurantName;
   }
 
   public Long getConsumerId() {

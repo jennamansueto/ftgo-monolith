@@ -38,7 +38,6 @@ dependencies {
     compile project(":ftgo-domain")
 
     compile project(":ftgo-consumer-service-api")
-    compile project(":ftgo-restaurant-service-api")
     compile project(":ftgo-order-service-api")
     compile project(":ftgo-consumer-service")
 
