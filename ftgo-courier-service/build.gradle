@@ -8,7 +8,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
     implementation "io.micrometer:micrometer-registry-prometheus:$micrometerVersion"
     implementation "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
-    implementation 'jakarta.el:jakarta.el-api:4.0.0'
+    implementation 'jakarta.el:jakarta.el-api:3.0.3'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
 
