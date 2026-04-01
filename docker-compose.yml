@@ -14,8 +14,9 @@ services:
       - "8082:8082"
     depends_on:
       - mysql
+    restart: on-failure
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo_consumer
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo_consumer?useSSL=false
       SPRING_DATASOURCE_USERNAME: mysqluser
       SPRING_DATASOURCE_PASSWORD: mysqlpw
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.jdbc.Driver

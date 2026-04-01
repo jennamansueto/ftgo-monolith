@@ -35,7 +35,7 @@ public class ConsumerServiceProxy implements ConsumerServiceClient {
     headers.setContentType(MediaType.APPLICATION_JSON);
     headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-    String requestBody = "{\"orderTotal\":{\"amount\":" + orderTotal.asString() + "}}";
+    String requestBody = "{\"orderTotal\":\"" + orderTotal.asString() + "\"}";
     HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
 
     try {

@@ -2,10 +2,12 @@ package net.chrisrichardson.ftgo.consumerservice.microservice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.chrisrichardson.ftgo.common.Money;
+import net.chrisrichardson.ftgo.common.MoneyModule;
 import net.chrisrichardson.ftgo.common.PersonName;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -21,13 +23,16 @@ public class ConsumerControllerTest {
 
   private MockMvc mockMvc;
   private ConsumerMicroservice consumerMicroservice;
-  private ObjectMapper objectMapper = new ObjectMapper();
+  private ObjectMapper objectMapper;
 
   @Before
   public void setUp() {
+    objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new MoneyModule());
+    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
     consumerMicroservice = mock(ConsumerMicroservice.class);
     ConsumerController controller = new ConsumerController(consumerMicroservice);
-    mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+    mockMvc = MockMvcBuilders.standaloneSetup(controller).setMessageConverters(converter).build();
   }
 
   @Test
@@ -68,7 +73,7 @@ public class ConsumerControllerTest {
   public void shouldValidateConsumerForOrder() throws Exception {
     doNothing().when(consumerMicroservice).validateOrderForConsumer(eq(1L), any(Money.class));
 
-    String requestBody = "{\"orderTotal\":{\"amount\":100}}";
+    String requestBody = "{\"orderTotal\":\"100\"}";
 
     mockMvc.perform(post("/consumers/1/validate")
             .contentType(MediaType.APPLICATION_JSON)
@@ -81,7 +86,7 @@ public class ConsumerControllerTest {
     doThrow(new ConsumerNotFoundException()).when(consumerMicroservice)
             .validateOrderForConsumer(eq(999L), any(Money.class));
 
-    String requestBody = "{\"orderTotal\":{\"amount\":100}}";
+    String requestBody = "{\"orderTotal\":\"100\"}";
 
     mockMvc.perform(post("/consumers/999/validate")
             .contentType(MediaType.APPLICATION_JSON)
@@ -94,7 +99,8 @@ public class ConsumerControllerTest {
     doThrow(new ConsumerVerificationFailedException()).when(consumerMicroservice)
             .validateOrderForConsumer(eq(1L), any(Money.class));
 
-    String requestBody = "{\"orderTotal\":{\"amount\":100}}";
+    String requestBody = "{\"orderTotal\":\"100\"}";
+
 
     mockMvc.perform(post("/consumers/1/validate")
             .contentType(MediaType.APPLICATION_JSON)
