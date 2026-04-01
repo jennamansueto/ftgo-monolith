@@ -1,5 +1,14 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.mysql:mysql-connector-j:8.0.33'
+    }
+}
+
 plugins {
-    id "org.flywaydb.flyway" version "8.5.13"
+    id "org.flywaydb.flyway" version "7.15.0"
 }
 
 dependencies {
