@@ -17,11 +17,23 @@ plugins {
 
 subprojects {
 
-    apply plugin: "java"
-    sourceCompatibility = '1.8'
-    targetCompatibility = '1.8'
+    apply plugin: "java-library"
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
 
     group = "net.chrisrichardson.ftgo"
+
+    // Re-register legacy Gradle configurations as aliases so that other
+    // modules still using compile/testCompile/runtime continue to work
+    // with Gradle 7.x while they are migrated individually.
+    configurations {
+        compile
+        testCompile
+        runtime
+        implementation.extendsFrom(compile)
+        testImplementation.extendsFrom(testCompile)
+        runtimeOnly.extendsFrom(runtime)
+    }
 
     repositories {
         mavenCentral()
