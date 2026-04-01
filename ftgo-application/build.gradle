@@ -1,13 +1,13 @@
 apply plugin: FtgoServicePlugin
 
 dependencies {
-    implementation project(":ftgo-consumer-service")
-    implementation project(":ftgo-order-service")
-    implementation project(":ftgo-restaurant-service")
-    implementation project(":ftgo-courier-service")
+    api project(":ftgo-consumer-service")
+    api project(":ftgo-order-service")
+    api project(":ftgo-restaurant-service")
+    api project(":ftgo-courier-service")
 
-    implementation "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
-    implementation "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+    api "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
+    api "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
 
     testImplementation project(":ftgo-end-to-end-tests-common")
 }

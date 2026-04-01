@@ -1,4 +1,4 @@
 dependencies {
-    implementation "org.springdoc:springdoc-openapi-ui:1.7.0"
-    implementation "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+    api "org.springdoc:springdoc-openapi-ui:1.7.0"
+    api "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
 }
