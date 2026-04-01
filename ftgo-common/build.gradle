@@ -6,7 +6,7 @@ dependencies {
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.5'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.5'
-    implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
+    api group: 'commons-lang', name: 'commons-lang', version: '2.6'
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.5"
 
     implementation 'com.mysql:mysql-connector-j:8.0.33'
