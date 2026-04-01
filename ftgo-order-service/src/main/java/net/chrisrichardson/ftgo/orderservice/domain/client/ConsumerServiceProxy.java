@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -60,6 +61,10 @@ public class ConsumerServiceProxy implements ConsumerServiceClient {
       }
       logger.error("HTTP error calling consumer service: {} {}", e.getStatusCode(), e.getMessage());
       throw new ConsumerValidationException("Consumer service returned error: " + e.getStatusCode());
+
+    } catch (HttpServerErrorException e) {
+      logger.error("Consumer service server error: {} {}", e.getStatusCode(), e.getMessage());
+      throw new ConsumerServiceUnavailableException("Consumer service error: " + e.getStatusCode(), e);
 
     } catch (ResourceAccessException e) {
       logger.error("Cannot connect to consumer service at {}: {}", consumerServiceUrl, e.getMessage());
