@@ -10,14 +10,11 @@ import springfox.documentation.builders.RequestHandlerSelectors;
 import springfox.documentation.schema.WildcardType;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
-
 import java.util.concurrent.CompletableFuture;
 
 import static springfox.documentation.schema.AlternateTypeRules.newRule;
 
 @Configuration
-@EnableSwagger2
 public class CommonSwaggerConfiguration {
 
     @Bean
