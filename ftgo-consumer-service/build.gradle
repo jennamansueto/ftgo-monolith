@@ -7,7 +7,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
     implementation "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
 
-    implementation 'org.glassfish:jakarta.el:4.0.2'
+    implementation 'org.glassfish:jakarta.el:3.0.4'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
     testImplementation "io.rest-assured:rest-assured:$restAssuredVersion"
