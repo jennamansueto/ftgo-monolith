@@ -6,12 +6,13 @@ dependencies {
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.14.3'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.14.3'
-    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
+    api group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.3"
 
     implementation 'com.mysql:mysql-connector-j:8.0.33'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+    testImplementation "junit:junit:4.13.2"
 
     runtimeOnly "jakarta.xml.bind:jakarta.xml.bind-api:2.3.3"
     runtimeOnly "org.glassfish.jaxb:jaxb-runtime:2.3.9"
