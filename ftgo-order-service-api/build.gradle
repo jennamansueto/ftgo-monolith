@@ -1,3 +1,4 @@
 dependencies {
-    compile project(":ftgo-common")
+    implementation project(":ftgo-common")
+    implementation 'commons-lang:commons-lang:2.6'
 }
