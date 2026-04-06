@@ -1,0 +1,7 @@
+dependencies {
+    compile project(":ftgo-consumer-service-api")
+
+    compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+    compile "io.github.resilience4j:resilience4j-spring-boot2:0.17.0"
+    compile "io.github.resilience4j:resilience4j-circuitbreaker:0.17.0"
+}

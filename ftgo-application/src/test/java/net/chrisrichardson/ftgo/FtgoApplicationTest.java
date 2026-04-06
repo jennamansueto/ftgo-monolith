@@ -13,6 +13,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringRunner;
 
+/**
+ * In-process integration test that loads the consumer service directly
+ * (not via REST client). ConsumerService implements ConsumerServiceProxy,
+ * so it satisfies the OrderService dependency.
+ */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes=FtgoApplicationTest.Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class FtgoApplicationTest extends AbstractEndToEndTests {
