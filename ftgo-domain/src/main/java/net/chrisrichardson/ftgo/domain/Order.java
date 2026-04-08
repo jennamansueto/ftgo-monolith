@@ -186,6 +186,15 @@ public class Order {
     this.assignedCourierId = courierId;
   }
 
+  public void revertAcceptance() {
+    if (orderState != ACCEPTED) {
+      throw new UnsupportedStateTransitionException(orderState);
+    }
+    this.orderState = APPROVED;
+    this.acceptTime = null;
+    this.readyBy = null;
+  }
+
   public Long getAssignedCourierId() {
     return assignedCourierId;
   }

@@ -29,4 +29,11 @@ public class OrderTransactionHelper {
             .orElseThrow(() -> new OrderNotFoundException(orderId));
     order.scheduleWithCourierId(courierId);
   }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void revertAcceptance(long orderId) {
+    Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new OrderNotFoundException(orderId));
+    order.revertAcceptance();
+  }
 }
