@@ -16,17 +16,29 @@ public class Action {
   @ManyToOne
   private Order order;
 
+  private Long orderId;
+
   private Action() {
   }
 
   public Action(ActionType type, Order order, LocalDateTime time) {
     this.type = type;
     this.order = order;
+    this.orderId = order != null ? order.getId() : null;
+    this.time = time;
+  }
+
+  public Action(ActionType type, long orderId, LocalDateTime time) {
+    this.type = type;
+    this.orderId = orderId;
     this.time = time;
   }
 
   public boolean actionFor(Order order) {
-    return this.order.getId().equals(order.getId());
+    if (this.order != null) {
+      return this.order.getId().equals(order.getId());
+    }
+    return this.orderId != null && this.orderId.equals(order.getId());
   }
 
   public static Action makePickup(Order order) {
@@ -35,6 +47,14 @@ public class Action {
 
   public static Action makeDropoff(Order order, LocalDateTime deliveryTime) {
     return new Action(ActionType.DROPOFF, order, deliveryTime);
+  }
+
+  public static Action makePickupForOrder(long orderId, LocalDateTime time) {
+    return new Action(ActionType.PICKUP, orderId, time);
+  }
+
+  public static Action makeDropoffForOrder(long orderId, LocalDateTime time) {
+    return new Action(ActionType.DROPOFF, orderId, time);
   }
 
 
