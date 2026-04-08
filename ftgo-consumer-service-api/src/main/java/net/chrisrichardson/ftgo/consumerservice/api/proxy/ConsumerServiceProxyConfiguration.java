@@ -3,6 +3,7 @@ package net.chrisrichardson.ftgo.consumerservice.api.proxy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.chrisrichardson.ftgo.common.MoneyModule;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -10,6 +11,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
+@ConditionalOnProperty(name = "consumer.service.url")
 public class ConsumerServiceProxyConfiguration {
 
   @Bean
