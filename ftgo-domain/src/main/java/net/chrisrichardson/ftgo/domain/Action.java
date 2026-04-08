@@ -1,8 +1,10 @@
 package net.chrisrichardson.ftgo.domain;
 
+import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import java.time.LocalDateTime;
 
@@ -14,8 +16,10 @@ public class Action {
   private LocalDateTime time;
 
   @ManyToOne
+  @JoinColumn(name = "order_id", insertable = false, updatable = false)
   private Order order;
 
+  @Column(name = "order_id")
   private Long orderId;
 
   private Action() {

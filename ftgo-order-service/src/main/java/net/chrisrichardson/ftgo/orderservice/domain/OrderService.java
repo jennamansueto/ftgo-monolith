@@ -6,6 +6,7 @@ import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -88,18 +89,27 @@ public class OrderService {
     return order;
   }
 
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public void accept(long orderId, LocalDateTime readyBy) {
-    Order order = tryToFindOrder(orderId);
-    order.acceptTicket(readyBy);
-    scheduleDelivery(order, readyBy);
-  }
-
-  public void scheduleDelivery(Order order, LocalDateTime readyBy) {
+    Order order = acceptTicket(orderId, readyBy);
     long courierId = courierServiceClient.assignDelivery(
         order.getId(),
         readyBy,
         readyBy.plusMinutes(30)
     );
+    assignCourierToOrder(orderId, courierId);
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public Order acceptTicket(long orderId, LocalDateTime readyBy) {
+    Order order = tryToFindOrder(orderId);
+    order.acceptTicket(readyBy);
+    return order;
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void assignCourierToOrder(long orderId, long courierId) {
+    Order order = tryToFindOrder(orderId);
     order.scheduleWithCourierId(courierId);
   }
 
