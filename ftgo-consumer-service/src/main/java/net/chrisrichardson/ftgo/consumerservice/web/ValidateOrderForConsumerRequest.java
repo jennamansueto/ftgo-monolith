@@ -16,4 +16,8 @@ public class ValidateOrderForConsumerRequest {
   public Money getOrderTotal() {
     return orderTotal;
   }
+
+  public void setOrderTotal(Money orderTotal) {
+    this.orderTotal = orderTotal;
+  }
 }
