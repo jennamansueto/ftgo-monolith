@@ -27,6 +27,9 @@ public class CourierServiceClient {
         AssignDeliveryRequest request = new AssignDeliveryRequest(orderId, pickupTime, dropoffTime);
         try {
             AssignDeliveryResponse response = restTemplate.postForObject(url, request, AssignDeliveryResponse.class);
+            if (response == null) {
+                throw new RuntimeException("Received null response from courier service for order " + orderId);
+            }
             return response.getCourierId();
         } catch (HttpServerErrorException e) {
             if (e.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE) {
