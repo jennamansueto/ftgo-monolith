@@ -105,7 +105,11 @@ public class OrderService {
       transactionHelper.assignCourierToOrder(orderId, courierId);
     } catch (RuntimeException e) {
       logger.error("Order acceptance failed for order {}, reverting to APPROVED", orderId, e);
-      transactionHelper.revertAcceptance(orderId);
+      try {
+        transactionHelper.revertAcceptance(orderId);
+      } catch (RuntimeException revertEx) {
+        logger.error("Failed to revert acceptance for order {}", orderId, revertEx);
+      }
       throw e;
     }
   }
