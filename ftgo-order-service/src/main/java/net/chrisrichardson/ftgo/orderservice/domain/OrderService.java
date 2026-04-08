@@ -96,19 +96,18 @@ public class OrderService {
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public void accept(long orderId, LocalDateTime readyBy) {
     Order order = transactionHelper.acceptTicket(orderId, readyBy);
-    long courierId;
     try {
-      courierId = courierServiceClient.assignDelivery(
+      long courierId = courierServiceClient.assignDelivery(
           order.getId(),
           readyBy,
           readyBy.plusMinutes(30)
       );
+      transactionHelper.assignCourierToOrder(orderId, courierId);
     } catch (RuntimeException e) {
-      logger.error("Courier assignment failed for order {}, reverting acceptance", orderId, e);
+      logger.error("Order acceptance failed for order {}, reverting to APPROVED", orderId, e);
       transactionHelper.revertAcceptance(orderId);
       throw e;
     }
-    transactionHelper.assignCourierToOrder(orderId, courierId);
   }
 
 
