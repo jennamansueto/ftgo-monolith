@@ -10,8 +10,11 @@ public class GetConsumerResponse extends CreateConsumerResponse {
     return name;
   }
 
-  public GetConsumerResponse(PersonName name) {
+  public GetConsumerResponse() {
+  }
 
+  public GetConsumerResponse(long consumerId, PersonName name) {
+    super(consumerId);
     this.name = name;
   }
 }
