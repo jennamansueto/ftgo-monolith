@@ -60,6 +60,8 @@ public class ConsumerServiceProxy {
         throw new ConsumerServiceUnavailableException("Consumer service returned empty response");
       }
       return response.getConsumerId();
+    } catch (HttpClientErrorException e) {
+      throw new ConsumerServiceUnavailableException("Consumer service returned error: " + e.getStatusCode(), e);
     } catch (HttpServerErrorException e) {
       throw new ConsumerServiceUnavailableException("Consumer service returned error: " + e.getStatusCode(), e);
     } catch (ResourceAccessException e) {
