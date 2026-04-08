@@ -2,6 +2,7 @@ package net.chrisrichardson.ftgo.orderservice.domain;
 
 import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.consumerservice.api.ConsumerServiceProxy;
+import net.chrisrichardson.ftgo.consumerservice.api.web.ValidateOrderForConsumerRequest;
 import org.springframework.web.client.RestTemplate;
 
 public class ConsumerServiceRestProxy implements ConsumerServiceProxy {
@@ -15,7 +16,9 @@ public class ConsumerServiceRestProxy implements ConsumerServiceProxy {
 
     @Override
     public void validateOrderForConsumer(long consumerId, Money orderTotal) {
-        // Call the consumer service REST endpoint to validate
-        restTemplate.getForObject(consumerServiceUrl + "/consumers/" + consumerId, String.class);
+        restTemplate.postForObject(
+                consumerServiceUrl + "/consumers/" + consumerId + "/validate",
+                new ValidateOrderForConsumerRequest(orderTotal),
+                Void.class);
     }
 }
