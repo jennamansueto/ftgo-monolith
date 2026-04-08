@@ -1,7 +1,7 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
+import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -27,34 +26,39 @@ public class OrderService {
 
   private Optional<MeterRegistry> meterRegistry;
 
-  private ConsumerService consumerService;
+  private ConsumerServiceClient consumerServiceClient;
   private CourierRepository courierRepository;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerServiceClient consumerServiceClient, CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
-    this.consumerService = consumerService;
+    this.consumerServiceClient = consumerServiceClient;
     this.courierRepository = courierRepository;
   }
 
-  @Transactional
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
     Restaurant restaurant = restaurantRepository.findById(restaurantId)
             .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
 
-
     List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
 
-    Order order = new Order(consumerId, restaurant, orderLineItems);
+    Money orderTotal = orderLineItems.stream().map(OrderLineItem::getTotal).reduce(Money.ZERO, Money::add);
 
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
+    consumerServiceClient.validateOrderForConsumer(consumerId, orderTotal);
+
+    return saveOrder(consumerId, restaurant, orderLineItems);
+  }
+
+  @Transactional
+  public Order saveOrder(long consumerId, Restaurant restaurant, List<OrderLineItem> orderLineItems) {
+    Order order = new Order(consumerId, restaurant, orderLineItems);
 
     // TODO - charge a credit card too
 
