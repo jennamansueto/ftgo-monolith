@@ -1,5 +1,6 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.consumerservice.api.ConsumerServiceProxy;
 import net.chrisrichardson.ftgo.domain.CourierRepository;
@@ -11,6 +12,7 @@ import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCusto
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
@@ -19,8 +21,13 @@ import java.util.Optional;
 @Import(DomainConfiguration.class)
 public class OrderConfiguration {
   @Bean
-  public RestTemplate restTemplate() {
-    return new RestTemplate();
+  public RestTemplate restTemplate(ObjectMapper objectMapper) {
+    RestTemplate restTemplate = new RestTemplate();
+    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+    converter.setObjectMapper(objectMapper);
+    restTemplate.getMessageConverters().removeIf(m -> m instanceof MappingJackson2HttpMessageConverter);
+    restTemplate.getMessageConverters().add(converter);
+    return restTemplate;
   }
 
   @Bean
