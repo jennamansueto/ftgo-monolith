@@ -1,9 +1,12 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
+import net.chrisrichardson.ftgo.restaurantservice.events.GetRestaurantWithMenuResponse;
+import net.chrisrichardson.ftgo.restaurantservice.events.MenuItemDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,7 +15,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -23,7 +25,7 @@ public class OrderService {
 
   private OrderRepository orderRepository;
 
-  private RestaurantRepository restaurantRepository;
+  private RestaurantServiceClient restaurantServiceClient;
 
   private Optional<MeterRegistry> meterRegistry;
 
@@ -32,31 +34,35 @@ public class OrderService {
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
-                      RestaurantRepository restaurantRepository,
+                      RestaurantServiceClient restaurantServiceClient,
                       Optional<MeterRegistry> meterRegistry,
                       ConsumerService consumerService, CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
-    this.restaurantRepository = restaurantRepository;
+    this.restaurantServiceClient = restaurantServiceClient;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierRepository = courierRepository;
   }
 
-  @Transactional
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+    // HTTP call outside transaction boundary
+    GetRestaurantWithMenuResponse restaurant = restaurantServiceClient.findRestaurantWithMenu(restaurantId);
 
+    return createOrderTransactional(consumerId, restaurant, lineItems);
+  }
+
+  @Transactional
+  public Order createOrderTransactional(long consumerId, GetRestaurantWithMenuResponse restaurant,
+                                         List<MenuItemIdAndQuantity> lineItems) {
 
     List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
 
-    Order order = new Order(consumerId, restaurant, orderLineItems);
+    Money orderMinimum = restaurant.getOrderMinimum() != null ? restaurant.getOrderMinimum() : Money.ZERO;
+    Order order = new Order(consumerId, restaurant.getId(), orderMinimum, orderLineItems);
 
     consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
-
-    // TODO - charge a credit card too
 
     orderRepository.save(order);
 
@@ -67,10 +73,13 @@ public class OrderService {
     return order;
   }
 
-  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
+  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, GetRestaurantWithMenuResponse restaurant) {
     return lineItems.stream().map(li -> {
-      MenuItem om = restaurant.findMenuItem(li.getMenuItemId()).orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
-      return new OrderLineItem(li.getMenuItemId(), om.getName(), om.getPrice(), li.getQuantity());
+      MenuItemDTO menuItem = restaurant.getMenuItems().stream()
+              .filter(mi -> mi.getId().equals(li.getMenuItemId()))
+              .findFirst()
+              .orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
+      return new OrderLineItem(li.getMenuItemId(), menuItem.getName(), menuItem.getPrice(), li.getQuantity());
     }).collect(toList());
   }
 
