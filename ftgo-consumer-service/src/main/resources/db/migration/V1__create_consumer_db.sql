@@ -1,5 +1,3 @@
-use ftgo_consumer;
-
 create table consumers
 (
   id         bigint not null,
