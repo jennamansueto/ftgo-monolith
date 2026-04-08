@@ -13,6 +13,8 @@ dependencies {
 
     compile "mysql:mysql-connector-java:5.1.47"
 
+    compile "org.flywaydb:flyway-core:5.2.4"
+
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
     testCompile "com.jayway.restassured:rest-assured:$restAssuredVersion"
     testCompile "com.jayway.jsonpath:json-path:2.3.0"

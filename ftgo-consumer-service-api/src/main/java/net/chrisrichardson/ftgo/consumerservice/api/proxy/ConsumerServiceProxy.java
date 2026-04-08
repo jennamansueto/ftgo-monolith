@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -42,6 +43,8 @@ public class ConsumerServiceProxy {
         throw new ConsumerVerificationException("Consumer verification failed for consumer: " + consumerId);
       }
       throw new ConsumerServiceUnavailableException("Consumer service returned error: " + e.getStatusCode(), e);
+    } catch (HttpServerErrorException e) {
+      throw new ConsumerServiceUnavailableException("Consumer service returned error: " + e.getStatusCode(), e);
     } catch (ResourceAccessException e) {
       throw new ConsumerServiceUnavailableException("Consumer service is unavailable", e);
     }
@@ -54,6 +57,8 @@ public class ConsumerServiceProxy {
     try {
       CreateConsumerResponse response = restTemplate.postForObject(url, request, CreateConsumerResponse.class);
       return response.getConsumerId();
+    } catch (HttpServerErrorException e) {
+      throw new ConsumerServiceUnavailableException("Consumer service returned error: " + e.getStatusCode(), e);
     } catch (ResourceAccessException e) {
       throw new ConsumerServiceUnavailableException("Consumer service is unavailable", e);
     }
@@ -72,6 +77,8 @@ public class ConsumerServiceProxy {
       if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
         return null;
       }
+      throw new ConsumerServiceUnavailableException("Consumer service returned error: " + e.getStatusCode(), e);
+    } catch (HttpServerErrorException e) {
       throw new ConsumerServiceUnavailableException("Consumer service returned error: " + e.getStatusCode(), e);
     } catch (ResourceAccessException e) {
       throw new ConsumerServiceUnavailableException("Consumer service is unavailable", e);
