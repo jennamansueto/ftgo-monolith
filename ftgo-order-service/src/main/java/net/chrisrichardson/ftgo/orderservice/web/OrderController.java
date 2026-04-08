@@ -69,7 +69,7 @@ public class OrderController {
     return new GetOrderResponse(order.getId(),
             order.getOrderState().name(),
             order.getOrderTotal(),
-            order.getRestaurantId().toString(),
+            order.getRestaurantName() != null ? order.getRestaurantName() : order.getRestaurantId().toString(),
             order.getAssignedCourier() == null ? null : order.getAssignedCourier().getId(),
             order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order)
     );

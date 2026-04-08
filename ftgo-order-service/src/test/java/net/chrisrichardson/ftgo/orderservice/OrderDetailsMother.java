@@ -34,7 +34,7 @@ public class OrderDetailsMother {
   public static final OrderState CHICKEN_VINDALOO_ORDER_STATE = OrderState.APPROVED;
 
   private static Order makeAjantaOrder() {
-    Order order = new Order(CONSUMER_ID, AJANTA_ID, Money.ZERO, chickenVindalooLineItems());
+    Order order = new Order(CONSUMER_ID, AJANTA_ID, AJANTA_RESTAURANT_NAME, Money.ZERO, chickenVindalooLineItems());
     order.setId(ORDER_ID);
     return order;
   }

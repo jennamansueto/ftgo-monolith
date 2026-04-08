@@ -31,6 +31,8 @@ public class Order {
 
   private Long restaurantId;
 
+  private String restaurantName;
+
   @Embedded
   private OrderLineItems orderLineItems;
 
@@ -57,9 +59,10 @@ public class Order {
   private Order() {
   }
 
-  public Order(long consumerId, long restaurantId, Money orderMinimum, List<OrderLineItem> orderLineItems) {
+  public Order(long consumerId, long restaurantId, String restaurantName, Money orderMinimum, List<OrderLineItem> orderLineItems) {
     this.consumerId = consumerId;
     this.restaurantId = restaurantId;
+    this.restaurantName = restaurantName;
     this.orderMinimum = orderMinimum;
     this.orderLineItems = new OrderLineItems(orderLineItems);
     this.orderState = APPROVED;
@@ -127,6 +130,10 @@ public class Order {
 
   public Long getRestaurantId() {
     return restaurantId;
+  }
+
+  public String getRestaurantName() {
+    return restaurantName;
   }
 
   public Long getConsumerId() {
