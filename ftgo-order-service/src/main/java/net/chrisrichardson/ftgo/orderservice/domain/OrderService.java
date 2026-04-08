@@ -1,22 +1,21 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
+import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
-@Transactional
 public class OrderService {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
@@ -27,44 +26,57 @@ public class OrderService {
 
   private Optional<MeterRegistry> meterRegistry;
 
-  private ConsumerService consumerService;
+  private ConsumerServiceClient consumerServiceClient;
   private CourierRepository courierRepository;
+  private TransactionTemplate transactionTemplate;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerServiceClient consumerServiceClient, CourierRepository courierRepository,
+                      TransactionTemplate transactionTemplate) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
-    this.consumerService = consumerService;
+    this.consumerServiceClient = consumerServiceClient;
     this.courierRepository = courierRepository;
+    this.transactionTemplate = transactionTemplate;
   }
 
-  @Transactional
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+    // Read restaurant and compute order line items within a transaction so that
+    // the lazy-loaded @ElementCollection menuItems can be accessed safely
+    // without depending on OSIV (Open Session in View).
+    List<OrderLineItem> orderLineItems = transactionTemplate.execute(status -> {
+      Restaurant restaurant = restaurantRepository.findById(restaurantId)
+              .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+      return makeOrderLineItems(lineItems, restaurant);
+    });
 
+    Money orderTotal = orderLineItems.stream().map(OrderLineItem::getTotal).reduce(Money.ZERO, Money::add);
 
-    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
+    // HTTP call is outside any transaction to avoid holding DB connections during network I/O
+    consumerServiceClient.validateOrderForConsumer(consumerId, orderTotal);
 
-    Order order = new Order(consumerId, restaurant, orderLineItems);
+    return transactionTemplate.execute(status -> {
+      // Re-fetch the restaurant inside the write transaction for JPA association
+      Restaurant restaurant = restaurantRepository.findById(restaurantId)
+              .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+      Order order = new Order(consumerId, restaurant, orderLineItems);
 
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
+      // TODO - charge a credit card too
 
-    // TODO - charge a credit card too
+      orderRepository.save(order);
 
-    orderRepository.save(order);
+      meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
 
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
+      meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
 
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
+      return order;
+    });
   }
 
   private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
@@ -75,7 +87,7 @@ public class OrderService {
   }
 
   @Transactional
-  public Order cancel(Long orderId) {
+  public Order cancel(long orderId) {
     Order order = tryToFindOrder(orderId);
 
     order.cancel();
@@ -90,6 +102,7 @@ public class OrderService {
     return order;
   }
 
+  @Transactional
   public void accept(long orderId, LocalDateTime readyBy) {
     Order order = tryToFindOrder(orderId);
     order.acceptTicket(readyBy);
@@ -110,7 +123,7 @@ public class OrderService {
   }
 
 
-  private Order tryToFindOrder(Long orderId) {
+  private Order tryToFindOrder(long orderId) {
     return orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId));
   }
 
