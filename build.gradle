@@ -18,14 +18,33 @@ plugins {
 subprojects {
 
     apply plugin: "java"
-    sourceCompatibility = '1.8'
-    targetCompatibility = '1.8'
+    apply plugin: 'io.spring.dependency-management'
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:$springBootVersion"
+        }
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    configurations.all {
+        resolutionStrategy.capabilitiesResolution.all { details ->
+            def dominated = details.candidates.find { it.id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier && it.id.group == 'org.codehaus.groovy' }
+            def preferred = details.candidates.find { it.id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier && it.id.group == 'org.apache.groovy' }
+            if (dominated && preferred) {
+                details.select(preferred)
+            }
+        }
+    }
 
     group = "net.chrisrichardson.ftgo"
 
     repositories {
         mavenCentral()
-        jcenter()
 
         // Commenting out problematic repositories that require authentication or are no longer available
         // eventuateMavenRepoUrl.split(',').each { repoUrl -> maven { url repoUrl } }
