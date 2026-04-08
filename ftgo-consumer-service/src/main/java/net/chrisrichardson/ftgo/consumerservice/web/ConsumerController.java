@@ -2,6 +2,7 @@ package net.chrisrichardson.ftgo.consumerservice.web;
 
 import net.chrisrichardson.ftgo.consumerservice.api.web.CreateConsumerRequest;
 import net.chrisrichardson.ftgo.consumerservice.api.web.CreateConsumerResponse;
+import net.chrisrichardson.ftgo.consumerservice.domain.Consumer;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
