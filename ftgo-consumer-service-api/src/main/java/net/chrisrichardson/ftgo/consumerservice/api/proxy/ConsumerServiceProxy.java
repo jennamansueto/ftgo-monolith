@@ -56,6 +56,9 @@ public class ConsumerServiceProxy {
 
     try {
       CreateConsumerResponse response = restTemplate.postForObject(url, request, CreateConsumerResponse.class);
+      if (response == null) {
+        throw new ConsumerServiceUnavailableException("Consumer service returned empty response");
+      }
       return response.getConsumerId();
     } catch (HttpServerErrorException e) {
       throw new ConsumerServiceUnavailableException("Consumer service returned error: " + e.getStatusCode(), e);
@@ -69,7 +72,7 @@ public class ConsumerServiceProxy {
 
     try {
       ResponseEntity<CreateConsumerResponse> response = restTemplate.getForEntity(url, CreateConsumerResponse.class, consumerId);
-      if (response.getStatusCode() == HttpStatus.OK) {
+      if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
         return response.getBody();
       }
       return null;
