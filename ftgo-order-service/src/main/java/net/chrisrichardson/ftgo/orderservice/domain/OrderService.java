@@ -6,12 +6,12 @@ import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
@@ -28,19 +28,22 @@ public class OrderService {
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
-  private CourierRepository courierRepository;
-  private Random random = new Random();
+  private CourierServiceClient courierServiceClient;
+  private OrderTransactionHelper transactionHelper;
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService,
+                      CourierServiceClient courierServiceClient,
+                      OrderTransactionHelper transactionHelper) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
-    this.courierRepository = courierRepository;
+    this.courierServiceClient = courierServiceClient;
+    this.transactionHelper = transactionHelper;
   }
 
   @Transactional
@@ -90,23 +93,25 @@ public class OrderService {
     return order;
   }
 
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public void accept(long orderId, LocalDateTime readyBy) {
-    Order order = tryToFindOrder(orderId);
-    order.acceptTicket(readyBy);
-    scheduleDelivery(order, readyBy);
-  }
-
-  public void scheduleDelivery(Order order, LocalDateTime readyBy) {
-
-    // Stupid implementation
-
-    List<Courier> couriers = courierRepository.findAllAvailable();
-    Courier courier = couriers.get(random.nextInt(couriers.size()));
-    courier.addAction(Action.makePickup(order));
-    courier.addAction(Action.makeDropoff(order, readyBy.plusMinutes(30)));
-
-    order.schedule(courier);
-
+    Order order = transactionHelper.acceptTicket(orderId, readyBy);
+    try {
+      long courierId = courierServiceClient.assignDelivery(
+          order.getId(),
+          readyBy,
+          readyBy.plusMinutes(30)
+      );
+      transactionHelper.assignCourierToOrder(orderId, courierId);
+    } catch (RuntimeException e) {
+      logger.error("Order acceptance failed for order {}, reverting to APPROVED", orderId, e);
+      try {
+        transactionHelper.revertAcceptance(orderId);
+      } catch (RuntimeException revertEx) {
+        logger.error("Failed to revert acceptance for order {}", orderId, revertEx);
+      }
+      throw e;
+    }
   }
 
 

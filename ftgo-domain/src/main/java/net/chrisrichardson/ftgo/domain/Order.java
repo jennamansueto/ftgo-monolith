@@ -52,8 +52,8 @@ public class Order {
   private LocalDateTime pickedUpTime;
   private LocalDateTime deliveredTime;
 
-  @ManyToOne
-  private Courier assignedCourier;
+  @Column(name = "assigned_courier_id")
+  private Long assignedCourierId;
 
   private Order() {
   }
@@ -179,11 +179,24 @@ public class Order {
   }
 
   public void schedule(Courier assignedCourier) {
-    this.assignedCourier = assignedCourier;
+    this.assignedCourierId = assignedCourier.getId();
   }
 
-  public Courier getAssignedCourier() {
-    return assignedCourier;
+  public void scheduleWithCourierId(long courierId) {
+    this.assignedCourierId = courierId;
+  }
+
+  public void revertAcceptance() {
+    if (orderState != ACCEPTED) {
+      throw new UnsupportedStateTransitionException(orderState);
+    }
+    this.orderState = APPROVED;
+    this.acceptTime = null;
+    this.readyBy = null;
+  }
+
+  public Long getAssignedCourierId() {
+    return assignedCourierId;
   }
 
   public void noteDelivered() {
