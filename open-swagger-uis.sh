@@ -2,5 +2,5 @@
 
 
 for port in 8081 ; do
-    open http://${DOCKER_HOST_IP?}:$port/swagger-ui.html
+    open http://${DOCKER_HOST_IP?}:$port/swagger-ui/index.html
 done
