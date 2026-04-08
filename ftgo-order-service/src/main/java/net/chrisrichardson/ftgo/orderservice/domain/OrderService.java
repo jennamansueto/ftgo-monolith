@@ -6,7 +6,6 @@ import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -29,17 +28,21 @@ public class OrderService {
 
   private ConsumerService consumerService;
   private CourierServiceClient courierServiceClient;
+  private OrderTransactionHelper transactionHelper;
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierServiceClient courierServiceClient) {
+                      ConsumerService consumerService,
+                      CourierServiceClient courierServiceClient,
+                      OrderTransactionHelper transactionHelper) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierServiceClient = courierServiceClient;
+    this.transactionHelper = transactionHelper;
   }
 
   @Transactional
@@ -89,28 +92,14 @@ public class OrderService {
     return order;
   }
 
-  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public void accept(long orderId, LocalDateTime readyBy) {
-    Order order = acceptTicket(orderId, readyBy);
+    Order order = transactionHelper.acceptTicket(orderId, readyBy);
     long courierId = courierServiceClient.assignDelivery(
         order.getId(),
         readyBy,
         readyBy.plusMinutes(30)
     );
-    assignCourierToOrder(orderId, courierId);
-  }
-
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public Order acceptTicket(long orderId, LocalDateTime readyBy) {
-    Order order = tryToFindOrder(orderId);
-    order.acceptTicket(readyBy);
-    return order;
-  }
-
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void assignCourierToOrder(long orderId, long courierId) {
-    Order order = tryToFindOrder(orderId);
-    order.scheduleWithCourierId(courierId);
+    transactionHelper.assignCourierToOrder(orderId, courierId);
   }
 
 
