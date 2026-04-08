@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static net.chrisrichardson.ftgo.orderservice.RestaurantMother.*;
+import static net.chrisrichardson.ftgo.orderservice.RestaurantMother.AJANTA_ID;
 
 public class OrderDetailsMother {
 
@@ -33,7 +34,7 @@ public class OrderDetailsMother {
   public static final OrderState CHICKEN_VINDALOO_ORDER_STATE = OrderState.APPROVED;
 
   private static Order makeAjantaOrder() {
-    Order order = new Order(CONSUMER_ID, new Restaurant(AJANTA_ID, "", new RestaurantMenu(Collections.emptyList())), chickenVindalooLineItems());
+    Order order = new Order(CONSUMER_ID, AJANTA_ID, AJANTA_RESTAURANT_NAME, Money.ZERO, chickenVindalooLineItems());
     order.setId(ORDER_ID);
     return order;
   }
