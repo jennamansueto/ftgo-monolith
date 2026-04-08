@@ -47,16 +47,24 @@ public class OrderService {
 
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
-
-    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
+    // Read restaurant and compute order line items within a transaction so that
+    // the lazy-loaded @ElementCollection menuItems can be accessed safely
+    // without depending on OSIV (Open Session in View).
+    List<OrderLineItem> orderLineItems = transactionTemplate.execute(status -> {
+      Restaurant restaurant = restaurantRepository.findById(restaurantId)
+              .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+      return makeOrderLineItems(lineItems, restaurant);
+    });
 
     Money orderTotal = orderLineItems.stream().map(OrderLineItem::getTotal).reduce(Money.ZERO, Money::add);
 
+    // HTTP call is outside any transaction to avoid holding DB connections during network I/O
     consumerServiceClient.validateOrderForConsumer(consumerId, orderTotal);
 
     return transactionTemplate.execute(status -> {
+      // Re-fetch the restaurant inside the write transaction for JPA association
+      Restaurant restaurant = restaurantRepository.findById(restaurantId)
+              .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
       Order order = new Order(consumerId, restaurant, orderLineItems);
 
       // TODO - charge a credit card too
