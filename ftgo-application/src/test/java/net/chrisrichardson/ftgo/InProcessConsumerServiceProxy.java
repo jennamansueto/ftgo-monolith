@@ -19,6 +19,10 @@ public class InProcessConsumerServiceProxy extends ConsumerServiceProxy {
 
   @Override
   public void validateOrderForConsumer(long consumerId, Money orderTotal) {
-    consumerService.validateOrderForConsumer(consumerId, orderTotal);
+    try {
+      consumerService.validateOrderForConsumer(consumerId, orderTotal);
+    } catch (RuntimeException e) {
+      throw new net.chrisrichardson.ftgo.orderservice.domain.ConsumerValidationFailedException(consumerId);
+    }
   }
 }
