@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -38,6 +39,8 @@ public class ConsumerServiceProxy {
       if (e.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
         throw new ConsumerVerificationFailedException("Consumer verification failed for consumer: " + consumerId);
       }
+      throw new ConsumerServiceUnavailableException("Consumer service returned error: " + e.getStatusCode(), e);
+    } catch (HttpStatusCodeException e) {
       throw new ConsumerServiceUnavailableException("Consumer service returned error: " + e.getStatusCode(), e);
     } catch (ResourceAccessException e) {
       throw new ConsumerServiceUnavailableException("Consumer service is unavailable", e);

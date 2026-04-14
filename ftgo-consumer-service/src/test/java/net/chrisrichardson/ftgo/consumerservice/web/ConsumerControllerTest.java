@@ -60,6 +60,10 @@ public class ConsumerControllerTest {
   public void shouldCreateConsumer() throws Exception {
     PersonName name = new PersonName("John", "Doe");
     Consumer consumer = new Consumer(name);
+    // Set id via reflection since JPA @GeneratedValue won't run outside persistence context
+    java.lang.reflect.Field idField = Consumer.class.getDeclaredField("id");
+    idField.setAccessible(true);
+    idField.set(consumer, 1L);
 
     when(consumerService.create(any(PersonName.class))).thenReturn(consumer);
 
