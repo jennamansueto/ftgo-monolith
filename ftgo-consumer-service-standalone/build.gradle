@@ -11,7 +11,7 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
 
     compile 'mysql:mysql-connector-java:5.1.39'
-    compile "org.flywaydb:flyway-core:6.0.0"
+    compile "org.flywaydb:flyway-core:5.0.7"
 
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
 }
