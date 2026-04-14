@@ -1,17 +1,23 @@
 package net.chrisrichardson.ftgo.orderservice.proxy;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.chrisrichardson.ftgo.consumerservice.api.ConsumerServiceInterface;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
 public class ConsumerServiceProxyConfiguration {
 
   @Bean
-  public RestTemplate consumerServiceRestTemplate() {
-    return new RestTemplate();
+  public RestTemplate consumerServiceRestTemplate(ObjectMapper objectMapper) {
+    RestTemplate restTemplate = new RestTemplate();
+    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
+    restTemplate.getMessageConverters().removeIf(c -> c instanceof MappingJackson2HttpMessageConverter);
+    restTemplate.getMessageConverters().add(converter);
+    return restTemplate;
   }
 
   @Bean
