@@ -13,6 +13,7 @@ import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCusto
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
@@ -47,7 +48,7 @@ public class OrderConfiguration {
   public OrderService orderService(RestaurantRepository restaurantRepository,
                                    OrderRepository orderRepository,
                                    Optional<MeterRegistry> meterRegistry,
-                                   ConsumerServiceProxy consumerServiceProxy, CourierRepository courierRepository) {
+                                   @Lazy ConsumerServiceProxy consumerServiceProxy, CourierRepository courierRepository) {
     return new OrderService(orderRepository,
             restaurantRepository,
             meterRegistry,
