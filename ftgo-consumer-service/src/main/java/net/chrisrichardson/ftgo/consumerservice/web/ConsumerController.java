@@ -36,7 +36,11 @@ public class ConsumerController {
   public ResponseEntity<Void> validateOrderForConsumer(@PathVariable long consumerId,
                                                        @RequestBody Map<String, String> body) {
     try {
-      Money orderTotal = new Money(body.get("orderTotal"));
+      String orderTotalStr = body.get("orderTotal");
+      if (orderTotalStr == null) {
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+      }
+      Money orderTotal = new Money(orderTotalStr);
       consumerService.validateOrderForConsumer(consumerId, orderTotal);
       return new ResponseEntity<>(HttpStatus.OK);
     } catch (ConsumerNotFoundException e) {
