@@ -1,0 +1,6 @@
+dependencies {
+    compile project(":ftgo-common")
+    compile project(":ftgo-consumer-service-api")
+
+    compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+}
