@@ -2,6 +2,8 @@ package net.chrisrichardson.ftgo.orderservice.domain;
 
 import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.consumerservice.api.web.ValidateOrderRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 public class ConsumerServiceProxy implements ConsumerServiceClient {
@@ -18,6 +20,13 @@ public class ConsumerServiceProxy implements ConsumerServiceClient {
   public void validateOrderForConsumer(long consumerId, Money orderTotal) {
     String url = consumerServiceUrl + "/consumers/" + consumerId + "/validate";
     ValidateOrderRequest request = new ValidateOrderRequest(orderTotal);
-    restTemplate.postForEntity(url, request, Void.class);
+    try {
+      restTemplate.postForEntity(url, request, Void.class);
+    } catch (HttpClientErrorException e) {
+      if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+        throw new ConsumerValidationException("Consumer not found: " + consumerId, e);
+      }
+      throw new ConsumerValidationException("Consumer validation failed for consumer " + consumerId + ": " + e.getStatusCode(), e);
+    }
   }
 }
