@@ -25,8 +25,10 @@ public class ConsumerServiceProxy implements ConsumerServiceClient {
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
         throw new ConsumerValidationException("Consumer not found: " + consumerId, e);
+      } else if (e.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
+        throw new ConsumerValidationException("Order validation failed for consumer " + consumerId, e);
       }
-      throw new ConsumerValidationException("Consumer validation failed for consumer " + consumerId + ": " + e.getStatusCode(), e);
+      throw new ConsumerValidationException("Consumer service error for consumer " + consumerId + ": " + e.getStatusCode(), e);
     }
   }
 }
