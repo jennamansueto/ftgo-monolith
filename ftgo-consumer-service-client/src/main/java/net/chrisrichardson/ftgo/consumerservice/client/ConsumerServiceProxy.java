@@ -45,6 +45,7 @@ public class ConsumerServiceProxy implements ConsumerServiceInterface {
         logger.info("Consumer {} validated successfully", consumerId);
         return;
       }
+      throw new RuntimeException("Unexpected response status from consumer service: " + response.getStatusCode());
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
         throw new ConsumerNotFoundException("Consumer not found: " + consumerId);
