@@ -11,6 +11,7 @@ import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCusto
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
@@ -30,6 +31,7 @@ public class OrderConfiguration {
   }
 
   @Bean
+  @Lazy
   public ConsumerServiceProxy consumerServiceProxy(
           RestTemplate consumerServiceRestTemplate,
           @Value("${consumer.service.url:http://localhost:8082}") String consumerServiceUrl) {
