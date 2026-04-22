@@ -1,0 +1,10 @@
+apply plugin: FtgoServicePlugin
+
+dependencies {
+    compile project(":ftgo-consumer-service")
+
+    compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
+    compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+
+    compile "org.flywaydb:flyway-core:5.2.4"
+}
