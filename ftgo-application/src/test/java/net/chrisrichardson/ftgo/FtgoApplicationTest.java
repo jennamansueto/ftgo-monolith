@@ -4,6 +4,8 @@ import net.chrisrichardson.ftgo.consumerservice.main.ConsumerServiceConfiguratio
 import net.chrisrichardson.ftgo.endtoendtests.common.AbstractEndToEndTests;
 import net.chrisrichardson.ftgo.orderservice.main.OrderServiceConfiguration;
 import net.chrisrichardson.ftgo.restaurantservice.RestaurantServiceConfiguration;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,5 +45,17 @@ public class FtgoApplicationTest extends AbstractEndToEndTests {
   @Override
   public int getCourierServicePort() {
     return port;
+  }
+
+  /**
+   * The courier service has been extracted into a separate microservice and is no longer
+   * embedded in the monolith. This in-process test cannot exercise the /couriers endpoints,
+   * so the full delivery flow is covered by ftgo-end-to-end-tests which runs against Docker
+   * with the real courier-service container.
+   */
+  @Test
+  @Ignore("Courier service is now a separate microservice; covered by ftgo-end-to-end-tests")
+  @Override
+  public void shouldDeliverOrder() {
   }
 }
