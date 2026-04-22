@@ -1,7 +1,6 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.restaurantclient.RestaurantServiceClient;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
@@ -27,21 +26,19 @@ public class OrderService {
 
   private RestaurantServiceClient restaurantServiceClient;
 
-  private Optional<MeterRegistry> meterRegistry;
+  private OrderPersister orderPersister;
 
-  private ConsumerService consumerService;
   private CourierRepository courierRepository;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantServiceClient restaurantServiceClient,
-                      Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      OrderPersister orderPersister,
+                      CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
     this.restaurantServiceClient = restaurantServiceClient;
-    this.meterRegistry = meterRegistry;
-    this.consumerService = consumerService;
+    this.orderPersister = orderPersister;
     this.courierRepository = courierRepository;
   }
 
@@ -51,24 +48,7 @@ public class OrderService {
 
     List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant.getMenu());
 
-    return persistOrder(consumerId, restaurant, orderLineItems);
-  }
-
-  @Transactional
-  public Order persistOrder(long consumerId,
-                            GetRestaurantResponse restaurant,
-                            List<OrderLineItem> orderLineItems) {
-    Order order = new Order(consumerId, restaurant.getId(), restaurant.getName(), orderLineItems);
-
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
-
-    orderRepository.save(order);
-
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
-
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
+    return orderPersister.persistOrder(consumerId, restaurant, orderLineItems);
   }
 
   private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, RestaurantMenuDTO menu) {

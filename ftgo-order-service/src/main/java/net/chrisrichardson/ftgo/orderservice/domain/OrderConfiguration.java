@@ -21,14 +21,21 @@ import java.util.Optional;
 public class OrderConfiguration {
 
   @Bean
+  public OrderPersister orderPersister(OrderRepository orderRepository,
+                                       ConsumerService consumerService,
+                                       Optional<MeterRegistry> meterRegistry) {
+    return new OrderPersister(orderRepository, consumerService, meterRegistry);
+  }
+
+  @Bean
   public OrderService orderService(RestaurantServiceClient restaurantServiceClient,
                                    OrderRepository orderRepository,
-                                   Optional<MeterRegistry> meterRegistry,
-                                   ConsumerService consumerService, CourierRepository courierRepository) {
+                                   OrderPersister orderPersister,
+                                   CourierRepository courierRepository) {
     return new OrderService(orderRepository,
             restaurantServiceClient,
-            meterRegistry,
-            consumerService, courierRepository);
+            orderPersister,
+            courierRepository);
   }
 
   @Bean

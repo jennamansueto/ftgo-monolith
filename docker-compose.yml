@@ -44,8 +44,8 @@ services:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo_restaurant
-      SPRING_DATASOURCE_USERNAME: ${FTGO_MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${FTGO_MYSQL_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: mysqluser
+      SPRING_DATASOURCE_PASSWORD: mysqlpw
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.jdbc.Driver
       SPRING_PROFILES_ACTIVE: docker
       JAVA_OPTS: -Xmx192m
