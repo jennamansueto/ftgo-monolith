@@ -3,9 +3,11 @@ package net.chrisrichardson.ftgo.courierservice.domain;
 
 import net.chrisrichardson.ftgo.common.Address;
 import net.chrisrichardson.ftgo.common.PersonName;
-import net.chrisrichardson.ftgo.domain.Courier;
-import net.chrisrichardson.ftgo.domain.CourierRepository;
+import net.chrisrichardson.ftgo.courierservice.api.CourierNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 public class CourierService {
 
@@ -30,16 +32,36 @@ public class CourierService {
     return courier;
   }
 
-  void noteAvailable(long courierId) {
-    courierRepository.findById(courierId).get().noteAvailable();
+  @Transactional
+  public void noteAvailable(long courierId) {
+    findCourierById(courierId).noteAvailable();
   }
 
-  void noteUnavailable(long courierId) {
-    courierRepository.findById(courierId).get().noteUnavailable();
+  @Transactional
+  public void noteUnavailable(long courierId) {
+    findCourierById(courierId).noteUnavailable();
   }
 
+  @Transactional(readOnly = true)
   public Courier findCourierById(long courierId) {
-    return courierRepository.findById(courierId).get();
+    return courierRepository.findById(courierId).orElseThrow(() -> new CourierNotFoundException(courierId));
+  }
+
+  @Transactional(readOnly = true)
+  public List<Courier> findAllAvailable() {
+    return courierRepository.findAllAvailable();
+  }
+
+  @Transactional
+  public Courier assignOrder(long courierId, long orderId, LocalDateTime readyBy) {
+    Courier courier = findCourierById(courierId);
+    courier.assignOrder(orderId, readyBy);
+    return courier;
+  }
+
+  @Transactional(readOnly = true)
+  public List<CourierAction> getActionsForOrder(long courierId, long orderId) {
+    return findCourierById(courierId).actionsForDelivery(orderId);
   }
 
 }

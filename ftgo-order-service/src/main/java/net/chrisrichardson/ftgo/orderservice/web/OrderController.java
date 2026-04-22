@@ -1,5 +1,7 @@
 package net.chrisrichardson.ftgo.orderservice.web;
 
+import net.chrisrichardson.ftgo.courierservice.api.CourierActionDTO;
+import net.chrisrichardson.ftgo.courierservice.api.CourierNotFoundException;
 import net.chrisrichardson.ftgo.domain.Order;
 import net.chrisrichardson.ftgo.domain.OrderRepository;
 import net.chrisrichardson.ftgo.domain.OrderRevision;
@@ -7,12 +9,17 @@ import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderRequest;
 import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderResponse;
 import net.chrisrichardson.ftgo.orderservice.api.web.OrderAcceptance;
 import net.chrisrichardson.ftgo.orderservice.api.web.ReviseOrderRequest;
+import net.chrisrichardson.ftgo.orderservice.courier.CourierServiceClient;
+import net.chrisrichardson.ftgo.orderservice.courier.CourierServiceUnavailableException;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderNotFoundException;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,14 +30,21 @@ import static java.util.stream.Collectors.toList;
 @RequestMapping(path = "/orders")
 public class OrderController {
 
+  private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
+
   private OrderService orderService;
 
   private OrderRepository orderRepository;
 
+  private CourierServiceClient courierServiceClient;
 
-  public OrderController(OrderService orderService, OrderRepository orderRepository) {
+
+  public OrderController(OrderService orderService,
+                         OrderRepository orderRepository,
+                         CourierServiceClient courierServiceClient) {
     this.orderService = orderService;
     this.orderRepository = orderRepository;
+    this.courierServiceClient = courierServiceClient;
   }
 
   @RequestMapping(method = RequestMethod.POST)
@@ -66,13 +80,27 @@ public class OrderController {
   }
 
   private GetOrderResponse makeGetOrderResponse(Order order) {
+    Long courierId = order.getAssignedCourierId();
+    List<CourierActionDTO> courierActions = courierId == null ? null : fetchCourierActions(courierId, order.getId());
     return new GetOrderResponse(order.getId(),
             order.getOrderState().name(),
             order.getOrderTotal(),
             order.getRestaurant().getName(),
-            order.getAssignedCourier() == null ? null : order.getAssignedCourier().getId(),
-            order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order)
+            courierId,
+            courierActions
     );
+  }
+
+  private List<CourierActionDTO> fetchCourierActions(long courierId, long orderId) {
+    try {
+      return courierServiceClient.getActionsForOrder(courierId, orderId);
+    } catch (CourierNotFoundException e) {
+      logger.warn("Courier {} not found when fetching actions for order {}", courierId, orderId);
+      return Collections.emptyList();
+    } catch (CourierServiceUnavailableException e) {
+      logger.warn("Courier service unavailable when fetching actions for order {}: {}", orderId, e.getMessage());
+      return Collections.emptyList();
+    }
   }
 
   @RequestMapping(path = "/{orderId}/cancel", method = RequestMethod.POST)

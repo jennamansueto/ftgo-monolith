@@ -1,13 +1,15 @@
-package net.chrisrichardson.ftgo.domain;
+package net.chrisrichardson.ftgo.courierservice.domain;
 
 import net.chrisrichardson.ftgo.common.Address;
 import net.chrisrichardson.ftgo.common.PersonName;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
+@Table(name = "courier")
 @Access(AccessType.FIELD)
 @DynamicUpdate
 public class Courier {
@@ -23,7 +25,7 @@ public class Courier {
   private Address address;
 
   @Embedded
-  private Plan plan;
+  private Plan plan = new Plan();
 
   private Boolean available;
 
@@ -37,19 +39,27 @@ public class Courier {
 
   public void noteAvailable() {
     this.available = true;
-
   }
 
-  public void addAction(Action action) {
+  public void noteUnavailable() {
+    this.available = false;
+  }
+
+  public void addAction(CourierAction action) {
     plan.add(action);
   }
 
-  public void cancelDelivery(Order order) {
-    plan.removeDelivery(order);
+  public void cancelDelivery(long orderId) {
+    plan.removeDelivery(orderId);
+  }
+
+  public void assignOrder(long orderId, LocalDateTime readyBy) {
+    plan.add(CourierAction.makePickup(orderId));
+    plan.add(CourierAction.makeDropoff(orderId, readyBy.plusMinutes(30)));
   }
 
   public boolean isAvailable() {
-    return available;
+    return available != null && available;
   }
 
   public Plan getPlan() {
@@ -60,11 +70,15 @@ public class Courier {
     return id;
   }
 
-  public void noteUnavailable() {
-    this.available = false;
+  public PersonName getName() {
+    return name;
   }
 
-  public List<Action> actionsForDelivery(Order order) {
-    return plan.actionsForDelivery(order);
+  public Address getAddress() {
+    return address;
+  }
+
+  public List<CourierAction> actionsForDelivery(long orderId) {
+    return plan.actionsForDelivery(orderId);
   }
 }

@@ -39,4 +39,9 @@ public class FtgoApplicationTest extends AbstractEndToEndTests {
   public int getApplicationPort() {
     return port;
   }
+
+  @Override
+  public int getCourierServicePort() {
+    return port;
+  }
 }
