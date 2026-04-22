@@ -1,7 +1,8 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
+import net.chrisrichardson.ftgo.consumerservice.client.ConsumerService;
+import net.chrisrichardson.ftgo.consumerservice.client.ConsumerServiceClientConfiguration;
 import net.chrisrichardson.ftgo.domain.CourierRepository;
 import net.chrisrichardson.ftgo.domain.DomainConfiguration;
 import net.chrisrichardson.ftgo.domain.OrderRepository;
@@ -15,7 +16,7 @@ import org.springframework.context.annotation.Import;
 import java.util.Optional;
 
 @Configuration
-@Import(DomainConfiguration.class)
+@Import({DomainConfiguration.class, ConsumerServiceClientConfiguration.class})
 public class OrderConfiguration {
   // TODO move to framework
   @Bean
