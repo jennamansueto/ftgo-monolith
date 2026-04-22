@@ -2,21 +2,22 @@ package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
+import net.chrisrichardson.ftgo.courierservice.api.AvailableCourierDTO;
 import net.chrisrichardson.ftgo.domain.*;
+import net.chrisrichardson.ftgo.orderservice.courier.CourierServiceClient;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
-@Transactional
 public class OrderService {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
@@ -28,23 +29,31 @@ public class OrderService {
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
-  private CourierRepository courierRepository;
+  private CourierServiceClient courierServiceClient;
+  private TransactionTemplate transactionTemplate;
+  private TransactionTemplate readOnlyTransactionTemplate;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService,
+                      CourierServiceClient courierServiceClient,
+                      TransactionTemplate transactionTemplate,
+                      TransactionTemplate readOnlyTransactionTemplate) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
-    this.courierRepository = courierRepository;
+    this.courierServiceClient = courierServiceClient;
+    this.transactionTemplate = transactionTemplate;
+    this.readOnlyTransactionTemplate = readOnlyTransactionTemplate;
   }
 
   @Transactional
-  public Order createOrder(long consumerId, long restaurantId,
+  public Order createOrder(long consumerId,
+                           long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
     Restaurant restaurant = restaurantRepository.findById(restaurantId)
             .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
@@ -90,23 +99,42 @@ public class OrderService {
     return order;
   }
 
+  /**
+   * Accepts an order and schedules a courier.
+   *
+   * HTTP calls to the courier service happen outside any database transaction.
+   * The order-existence check and the local state transition are each wrapped
+   * in their own transaction via {@link TransactionTemplate} so that remote
+   * calls never run inside a @Transactional boundary. TransactionTemplate is
+   * used instead of @Transactional on private methods because Spring's proxy
+   * AOP would not intercept self-invocation from within the same bean.
+   *
+   * Atomicity trade-off: if the HTTP call to assign the courier succeeds but
+   * the subsequent local DB commit fails (or vice-versa), the two sides can
+   * drift. A future enhancement is to use sagas / outbox for at-least-once
+   * delivery and compensation.
+   */
   public void accept(long orderId, LocalDateTime readyBy) {
-    Order order = tryToFindOrder(orderId);
-    order.acceptTicket(readyBy);
-    scheduleDelivery(order, readyBy);
+    readOnlyTransactionTemplate.execute(status -> tryToFindOrder(orderId));
+
+    long courierId = assignAvailableCourier(orderId, readyBy);
+
+    transactionTemplate.execute(status -> {
+      Order order = tryToFindOrder(orderId);
+      order.acceptTicket(readyBy);
+      order.schedule(courierId);
+      return null;
+    });
   }
 
-  public void scheduleDelivery(Order order, LocalDateTime readyBy) {
-
-    // Stupid implementation
-
-    List<Courier> couriers = courierRepository.findAllAvailable();
-    Courier courier = couriers.get(random.nextInt(couriers.size()));
-    courier.addAction(Action.makePickup(order));
-    courier.addAction(Action.makeDropoff(order, readyBy.plusMinutes(30)));
-
-    order.schedule(courier);
-
+  private long assignAvailableCourier(long orderId, LocalDateTime readyBy) {
+    List<AvailableCourierDTO> couriers = courierServiceClient.findAvailableCouriers();
+    if (couriers.isEmpty()) {
+      throw new NoAvailableCouriersException();
+    }
+    AvailableCourierDTO picked = couriers.get(random.nextInt(couriers.size()));
+    courierServiceClient.assignOrderToCourier(picked.getId(), orderId, readyBy);
+    return picked.getId();
   }
 
 

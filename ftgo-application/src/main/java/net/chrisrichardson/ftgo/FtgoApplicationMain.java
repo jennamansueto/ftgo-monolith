@@ -15,6 +15,9 @@ import org.springframework.context.annotation.Import;
 @Import({ConsumerServiceConfiguration.class,
         OrderServiceConfiguration.class,
         RestaurantServiceConfiguration.class})
+// NOTE: The Courier Service has been extracted into a separate microservice.
+// See ftgo-courier-service-main. The monolith now communicates with it via
+// CourierServiceClient over HTTP (see ftgo-order-service).
 public class FtgoApplicationMain {
 
   public static void main(String[] args) {

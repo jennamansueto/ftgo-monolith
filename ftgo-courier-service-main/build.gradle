@@ -1,0 +1,9 @@
+apply plugin: FtgoServicePlugin
+
+dependencies {
+    compile project(":ftgo-courier-service")
+
+    compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
+    compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+    compile "mysql:mysql-connector-java:5.1.46"
+}
