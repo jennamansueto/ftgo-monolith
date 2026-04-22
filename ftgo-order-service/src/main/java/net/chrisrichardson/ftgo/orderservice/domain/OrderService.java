@@ -3,7 +3,11 @@ package net.chrisrichardson.ftgo.orderservice.domain;
 import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
+import net.chrisrichardson.ftgo.orderservice.restaurantclient.RestaurantServiceClient;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
+import net.chrisrichardson.ftgo.restaurantservice.events.GetRestaurantResponse;
+import net.chrisrichardson.ftgo.restaurantservice.events.MenuItemDTO;
+import net.chrisrichardson.ftgo.restaurantservice.events.RestaurantMenuDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,18 +16,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
-@Transactional
 public class OrderService {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
   private OrderRepository orderRepository;
 
-  private RestaurantRepository restaurantRepository;
+  private RestaurantServiceClient restaurantServiceClient;
 
   private Optional<MeterRegistry> meterRegistry;
 
@@ -32,31 +34,33 @@ public class OrderService {
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
-                      RestaurantRepository restaurantRepository,
+                      RestaurantServiceClient restaurantServiceClient,
                       Optional<MeterRegistry> meterRegistry,
                       ConsumerService consumerService, CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
-    this.restaurantRepository = restaurantRepository;
+    this.restaurantServiceClient = restaurantServiceClient;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierRepository = courierRepository;
   }
 
-  @Transactional
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+    GetRestaurantResponse restaurant = restaurantServiceClient.findRestaurant(restaurantId);
 
+    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant.getMenu());
 
-    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
+    return persistOrder(consumerId, restaurant, orderLineItems);
+  }
 
-    Order order = new Order(consumerId, restaurant, orderLineItems);
+  @Transactional
+  public Order persistOrder(long consumerId,
+                            GetRestaurantResponse restaurant,
+                            List<OrderLineItem> orderLineItems) {
+    Order order = new Order(consumerId, restaurant.getId(), restaurant.getName(), orderLineItems);
 
     consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
-
-    // TODO - charge a credit card too
 
     orderRepository.save(order);
 
@@ -67,11 +71,21 @@ public class OrderService {
     return order;
   }
 
-  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
+  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, RestaurantMenuDTO menu) {
     return lineItems.stream().map(li -> {
-      MenuItem om = restaurant.findMenuItem(li.getMenuItemId()).orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
+      MenuItemDTO om = findMenuItem(menu, li.getMenuItemId())
+              .orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
       return new OrderLineItem(li.getMenuItemId(), om.getName(), om.getPrice(), li.getQuantity());
     }).collect(toList());
+  }
+
+  private Optional<MenuItemDTO> findMenuItem(RestaurantMenuDTO menu, String menuItemId) {
+    if (menu == null || menu.getMenuItemDTOs() == null) {
+      return Optional.empty();
+    }
+    return menu.getMenuItemDTOs().stream()
+            .filter(mi -> mi.getId().equals(menuItemId))
+            .findFirst();
   }
 
   @Transactional
@@ -90,6 +104,7 @@ public class OrderService {
     return order;
   }
 
+  @Transactional
   public void accept(long orderId, LocalDateTime readyBy) {
     Order order = tryToFindOrder(orderId);
     order.acceptTicket(readyBy);

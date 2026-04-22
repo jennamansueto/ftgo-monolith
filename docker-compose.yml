@@ -8,12 +8,21 @@ services:
       - MYSQL_ROOT_PASSWORD=rootpassword
       - MYSQL_USER=mysqluser
       - MYSQL_PASSWORD=mysqlpw
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
   ftgo-application:
     build: ./ftgo-application
     ports:
       - "8081:8080"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+      restaurant-service:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo
       SPRING_DATASOURCE_USERNAME: mysqluser
@@ -25,3 +34,18 @@ services:
       SPRING_SLEUTH_ENABLED: "true"
       SPRING_SLEUTH_SAMPLER_PROBABILITY: 1
       SPRING_ZIPKIN_BASE_URL: http://zipkin:9411/
+      RESTAURANT_SERVICE_URL: http://restaurant-service:8083
+  restaurant-service:
+    build: ./ftgo-restaurant-service-main
+    ports:
+      - "8083:8083"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo_restaurant
+      SPRING_DATASOURCE_USERNAME: ${FTGO_MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${FTGO_MYSQL_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.jdbc.Driver
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: -Xmx192m
