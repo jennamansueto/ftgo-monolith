@@ -56,25 +56,29 @@ public class OrderService {
   @Transactional(propagation = Propagation.NEVER)
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    // Step 1: compute order total in a read-only transaction so we can release it
-    // before making a remote call.
-    Money orderTotal = readOnlyTransactionTemplate.execute(status -> {
+    // Step 1: compute the order's line items and total in a read-only transaction.
+    // OrderLineItem carries denormalized name/price, so the items returned here are
+    // self-contained and can be persisted later without re-reading the restaurant
+    // menu (which would introduce a TOCTOU race against the HTTP validation).
+    List<OrderLineItem> orderLineItems = readOnlyTransactionTemplate.execute(status -> {
       Restaurant restaurant = restaurantRepository.findById(restaurantId)
               .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
-      List<OrderLineItem> items = makeOrderLineItems(lineItems, restaurant);
-      return new Order(consumerId, restaurant, items).getOrderTotal();
+      return makeOrderLineItems(lineItems, restaurant);
     });
+    Money orderTotal = orderLineItems.stream()
+            .map(OrderLineItem::getTotal)
+            .reduce(Money.ZERO, Money::add);
 
     // Step 2: HTTP call to Consumer Service OUTSIDE any DB transaction. If this
     // throws, no order is persisted.
     consumerServiceClient.validateOrderForConsumer(consumerId, orderTotal);
 
-    // Step 3: persist the order in a separate write transaction.
+    // Step 3: persist the order in a separate write transaction, reusing the line
+    // items computed in step 1 so the persisted total matches the validated total.
     return writeTransactionTemplate.execute(status -> {
       Restaurant restaurant = restaurantRepository.findById(restaurantId)
               .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
-      List<OrderLineItem> items = makeOrderLineItems(lineItems, restaurant);
-      Order order = new Order(consumerId, restaurant, items);
+      Order order = new Order(consumerId, restaurant, orderLineItems);
 
       // TODO - charge a credit card too
 
