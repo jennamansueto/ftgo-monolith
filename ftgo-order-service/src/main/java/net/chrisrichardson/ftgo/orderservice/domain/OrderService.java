@@ -9,6 +9,7 @@ import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,19 +30,25 @@ public class OrderService {
 
   private ConsumerService consumerService;
   private CourierServiceClient courierServiceClient;
+  private TransactionTemplate transactionTemplate;
+  private TransactionTemplate readOnlyTransactionTemplate;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
                       ConsumerService consumerService,
-                      CourierServiceClient courierServiceClient) {
+                      CourierServiceClient courierServiceClient,
+                      TransactionTemplate transactionTemplate,
+                      TransactionTemplate readOnlyTransactionTemplate) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierServiceClient = courierServiceClient;
+    this.transactionTemplate = transactionTemplate;
+    this.readOnlyTransactionTemplate = readOnlyTransactionTemplate;
   }
 
   @Transactional
@@ -95,11 +102,12 @@ public class OrderService {
   /**
    * Accepts an order and schedules a courier.
    *
-   * Note: This method is intentionally not @Transactional. HTTP calls to the
-   * courier service happen outside any database transaction. The acceptance
-   * state transition and the assigned courier id are persisted in a single
-   * transactional method ({@link #persistAcceptance}) after the HTTP calls
-   * complete successfully.
+   * HTTP calls to the courier service happen outside any database transaction.
+   * The order-existence check and the local state transition are each wrapped
+   * in their own transaction via {@link TransactionTemplate} so that remote
+   * calls never run inside a @Transactional boundary. TransactionTemplate is
+   * used instead of @Transactional on private methods because Spring's proxy
+   * AOP would not intercept self-invocation from within the same bean.
    *
    * Atomicity trade-off: if the HTTP call to assign the courier succeeds but
    * the subsequent local DB commit fails (or vice-versa), the two sides can
@@ -107,17 +115,16 @@ public class OrderService {
    * delivery and compensation.
    */
   public void accept(long orderId, LocalDateTime readyBy) {
-    // Verify order exists before calling remote service.
-    loadOrderReadOnly(orderId);
+    readOnlyTransactionTemplate.execute(status -> tryToFindOrder(orderId));
 
     long courierId = assignAvailableCourier(orderId, readyBy);
 
-    persistAcceptance(orderId, readyBy, courierId);
-  }
-
-  @Transactional(readOnly = true)
-  protected Order loadOrderReadOnly(long orderId) {
-    return tryToFindOrder(orderId);
+    transactionTemplate.execute(status -> {
+      Order order = tryToFindOrder(orderId);
+      order.acceptTicket(readyBy);
+      order.schedule(courierId);
+      return null;
+    });
   }
 
   private long assignAvailableCourier(long orderId, LocalDateTime readyBy) {
@@ -128,13 +135,6 @@ public class OrderService {
     AvailableCourierDTO picked = couriers.get(random.nextInt(couriers.size()));
     courierServiceClient.assignOrderToCourier(picked.getId(), orderId, readyBy);
     return picked.getId();
-  }
-
-  @Transactional
-  protected void persistAcceptance(long orderId, LocalDateTime readyBy, long courierId) {
-    Order order = tryToFindOrder(orderId);
-    order.acceptTicket(readyBy);
-    order.schedule(courierId);
   }
 
 

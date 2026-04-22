@@ -7,11 +7,15 @@ import net.chrisrichardson.ftgo.domain.OrderRepository;
 import net.chrisrichardson.ftgo.domain.RestaurantRepository;
 import net.chrisrichardson.ftgo.orderservice.courier.CourierServiceClient;
 import net.chrisrichardson.ftgo.orderservice.courier.CourierServiceClientConfiguration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Optional;
 
@@ -24,12 +28,29 @@ public class OrderConfiguration {
                                    OrderRepository orderRepository,
                                    Optional<MeterRegistry> meterRegistry,
                                    ConsumerService consumerService,
-                                   CourierServiceClient courierServiceClient) {
+                                   CourierServiceClient courierServiceClient,
+                                   @Qualifier("orderServiceTransactionTemplate") TransactionTemplate transactionTemplate,
+                                   @Qualifier("orderServiceReadOnlyTransactionTemplate") TransactionTemplate readOnlyTransactionTemplate) {
     return new OrderService(orderRepository,
             restaurantRepository,
             meterRegistry,
             consumerService,
-            courierServiceClient);
+            courierServiceClient,
+            transactionTemplate,
+            readOnlyTransactionTemplate);
+  }
+
+  @Bean
+  public TransactionTemplate orderServiceTransactionTemplate(PlatformTransactionManager transactionManager) {
+    return new TransactionTemplate(transactionManager);
+  }
+
+  @Bean
+  public TransactionTemplate orderServiceReadOnlyTransactionTemplate(PlatformTransactionManager transactionManager) {
+    TransactionTemplate template = new TransactionTemplate(transactionManager);
+    template.setReadOnly(true);
+    template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+    return template;
   }
 
   @Bean
