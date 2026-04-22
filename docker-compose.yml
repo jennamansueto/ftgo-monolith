@@ -5,23 +5,45 @@ services:
     ports:
       - 3306:3306
     environment:
-      - MYSQL_ROOT_PASSWORD=rootpassword
-      - MYSQL_USER=mysqluser
-      - MYSQL_PASSWORD=mysqlpw
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
+      - MYSQL_USER=${MYSQL_USER:-mysqluser}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mysqlpw}
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
   ftgo-application:
     build: ./ftgo-application
     ports:
       - "8081:8080"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+      consumer-service:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo
-      SPRING_DATASOURCE_USERNAME: mysqluser
-      SPRING_DATASOURCE_PASSWORD: mysqlpw
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-mysqluser}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-mysqlpw}
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.jdbc.Driver
+      CONSUMER_SERVICE_URL: http://consumer-service:8082
       EVENTUATELOCAL_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       EVENTUATELOCAL_ZOOKEEPER_CONNECTION_STRING: zookeeper:2181
       JAVA_OPTS: -Xmx192m
       SPRING_SLEUTH_ENABLED: "true"
       SPRING_SLEUTH_SAMPLER_PROBABILITY: 1
       SPRING_ZIPKIN_BASE_URL: http://zipkin:9411/
+  consumer-service:
+    build: ./ftgo-consumer-service-main
+    ports:
+      - "8082:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo_consumer?useSSL=false
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-mysqluser}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-mysqlpw}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.jdbc.Driver
+      JAVA_OPTS: -Xmx192m
