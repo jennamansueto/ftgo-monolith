@@ -1,18 +1,21 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
+import net.chrisrichardson.ftgo.common.Money;
 import net.chrisrichardson.ftgo.domain.*;
+import net.chrisrichardson.ftgo.orderservice.consumerclient.ConsumerServiceClient;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -27,44 +30,62 @@ public class OrderService {
 
   private Optional<MeterRegistry> meterRegistry;
 
-  private ConsumerService consumerService;
+  private ConsumerServiceClient consumerServiceClient;
   private CourierRepository courierRepository;
+  private TransactionTemplate readOnlyTransactionTemplate;
+  private TransactionTemplate writeTransactionTemplate;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerServiceClient consumerServiceClient,
+                      CourierRepository courierRepository,
+                      PlatformTransactionManager transactionManager) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
-    this.consumerService = consumerService;
+    this.consumerServiceClient = consumerServiceClient;
     this.courierRepository = courierRepository;
+    this.readOnlyTransactionTemplate = new TransactionTemplate(transactionManager);
+    this.readOnlyTransactionTemplate.setReadOnly(true);
+    this.writeTransactionTemplate = new TransactionTemplate(transactionManager);
   }
 
-  @Transactional
+  @Transactional(propagation = Propagation.NEVER)
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+    // Step 1: compute order total in a read-only transaction so we can release it
+    // before making a remote call.
+    Money orderTotal = readOnlyTransactionTemplate.execute(status -> {
+      Restaurant restaurant = restaurantRepository.findById(restaurantId)
+              .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+      List<OrderLineItem> items = makeOrderLineItems(lineItems, restaurant);
+      return new Order(consumerId, restaurant, items).getOrderTotal();
+    });
 
+    // Step 2: HTTP call to Consumer Service OUTSIDE any DB transaction. If this
+    // throws, no order is persisted.
+    consumerServiceClient.validateOrderForConsumer(consumerId, orderTotal);
 
-    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
+    // Step 3: persist the order in a separate write transaction.
+    return writeTransactionTemplate.execute(status -> {
+      Restaurant restaurant = restaurantRepository.findById(restaurantId)
+              .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+      List<OrderLineItem> items = makeOrderLineItems(lineItems, restaurant);
+      Order order = new Order(consumerId, restaurant, items);
 
-    Order order = new Order(consumerId, restaurant, orderLineItems);
+      // TODO - charge a credit card too
 
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
+      orderRepository.save(order);
 
-    // TODO - charge a credit card too
+      meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
 
-    orderRepository.save(order);
+      meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
 
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
-
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
+      return order;
+    });
   }
 
   private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
