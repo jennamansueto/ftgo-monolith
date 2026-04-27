@@ -65,7 +65,11 @@ public abstract class AbstractEndToEndTests {
   }
 
   private String consumerBaseUrl(String... pathElements) {
-    return baseUrl(getApplicationPort(), "consumers", pathElements);
+    return baseUrl(getConsumerServicePort(), "consumers", pathElements);
+  }
+
+  public int getConsumerServicePort() {
+    return 8082;
   }
 
   private String restaurantBaseUrl(String... pathElements) {
