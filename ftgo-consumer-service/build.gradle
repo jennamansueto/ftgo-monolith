@@ -7,9 +7,9 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
     implementation "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
 
-    implementation 'javax.el:javax.el-api:2.2.5'
+    implementation 'jakarta.el:jakarta.el-api:5.0.1'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-    testImplementation "com.jayway.restassured:rest-assured:$restAssuredVersion"
-    testImplementation "com.jayway.jsonpath:json-path:2.3.0"
+    testImplementation "io.rest-assured:rest-assured:$restAssuredVersion"
+    testImplementation "com.jayway.jsonpath:json-path:2.9.0"
 }
