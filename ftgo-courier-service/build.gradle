@@ -8,13 +8,13 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
     implementation "io.micrometer:micrometer-registry-prometheus:$micrometerVersion"
     implementation "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
-    implementation 'javax.el:javax.el-api:2.2.5'
+    implementation 'jakarta.el:jakarta.el-api:5.0.1'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
 
-    testImplementation 'io.rest-assured:rest-assured:3.0.6'
-    testImplementation 'io.rest-assured:spring-mock-mvc:3.0.6'
-    testImplementation "io.rest-assured:json-path:3.0.6"
+    testImplementation "io.rest-assured:rest-assured:$restAssuredVersion"
+    testImplementation "io.rest-assured:spring-mock-mvc:$restAssuredVersion"
+    testImplementation "io.rest-assured:json-path:$restAssuredVersion"
 
     testImplementation project(":ftgo-test-util")
 
