@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerNotFoundException;
 
 @RestController
 @RequestMapping(path="/consumers")
@@ -25,5 +26,17 @@ public class ConsumerController {
     return consumerService.findById(consumerId)
             .map(consumer -> new ResponseEntity<>(new GetConsumerResponse(consumer.getName()), HttpStatus.OK))
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+  }
+
+  @PostMapping("/{consumerId}/validate")
+  public ResponseEntity<Void> validateOrderForConsumer(
+          @PathVariable long consumerId,
+          @RequestBody ValidateOrderRequest request) {
+    try {
+      consumerService.validateOrderForConsumer(consumerId, request.getOrderTotal());
+      return ResponseEntity.ok().build();
+    } catch (ConsumerNotFoundException e) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
   }
 }
