@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -45,6 +46,9 @@ public class ConsumerServiceProxy {
       }
       logger.error("Consumer validation failed for consumerId={}: {}", consumerId, e.getMessage());
       throw new ConsumerVerificationFailedException();
+    } catch (HttpServerErrorException e) {
+      logger.error("Consumer service error for consumerId={}: {}", consumerId, e.getMessage());
+      throw new ConsumerServiceUnavailableException(e);
     } catch (ResourceAccessException e) {
       logger.error("Consumer service unavailable: {}", e.getMessage());
       throw new ConsumerServiceUnavailableException(e);
