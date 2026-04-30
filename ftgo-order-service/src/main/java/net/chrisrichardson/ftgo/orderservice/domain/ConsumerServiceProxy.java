@@ -5,8 +5,9 @@ import net.chrisrichardson.ftgo.consumerservice.api.ConsumerValidationService;
 import net.chrisrichardson.ftgo.consumerservice.api.web.ValidateOrderForConsumerRequest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 public class ConsumerServiceProxy implements ConsumerValidationService {
@@ -28,8 +29,13 @@ public class ConsumerServiceProxy implements ConsumerValidationService {
     HttpEntity<ValidateOrderForConsumerRequest> entity = new HttpEntity<>(request, headers);
     try {
       restTemplate.postForEntity(url, entity, Void.class);
-    } catch (RestClientException e) {
-      throw new ConsumerValidationFailedException(consumerId);
+    } catch (HttpClientErrorException e) {
+      if (e.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
+        throw new ConsumerValidationFailedException(consumerId);
+      }
+      throw new ConsumerServiceUnavailableException(consumerId, e);
+    } catch (Exception e) {
+      throw new ConsumerServiceUnavailableException(consumerId, e);
     }
   }
 }
