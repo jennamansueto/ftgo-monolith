@@ -26,19 +26,20 @@ public class CourierServiceClient {
     }
 
     public long scheduleDelivery(long orderId, LocalDateTime readyBy) {
+        ScheduleDeliveryResponse response;
         try {
-            ScheduleDeliveryResponse response = restTemplate.postForObject(
+            response = restTemplate.postForObject(
                 courierServiceUrl + "/couriers/schedule-delivery",
                 new ScheduleDeliveryRequest(orderId, readyBy),
                 ScheduleDeliveryResponse.class);
-            if (response == null) {
-                throw new RuntimeException("Courier service returned empty response for orderId=" + orderId);
-            }
-            return response.getCourierId();
         } catch (Exception e) {
             logger.error("Error calling courier service", e);
             throw new RuntimeException("Courier service call failed", e);
         }
+        if (response == null) {
+            throw new RuntimeException("Courier service returned empty response for orderId=" + orderId);
+        }
+        return response.getCourierId();
     }
 
     public List<CourierActionDTO> getCourierActionsForOrder(long courierId, long orderId) {
