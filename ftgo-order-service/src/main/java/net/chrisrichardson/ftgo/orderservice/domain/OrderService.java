@@ -15,7 +15,6 @@ import java.util.Random;
 
 import static java.util.stream.Collectors.toList;
 
-@Transactional
 public class OrderService {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
@@ -42,15 +41,18 @@ public class OrderService {
     this.courierRepository = courierRepository;
   }
 
-  @Transactional
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
     Restaurant restaurant = restaurantServiceClient.findById(restaurantId)
             .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
 
-
     List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
 
+    return saveOrder(consumerId, restaurant, orderLineItems);
+  }
+
+  @Transactional
+  Order saveOrder(long consumerId, Restaurant restaurant, List<OrderLineItem> orderLineItems) {
     Order order = new Order(consumerId, restaurant.getId(), restaurant.getName(), orderLineItems);
 
     consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
@@ -89,6 +91,7 @@ public class OrderService {
     return order;
   }
 
+  @Transactional
   public void accept(long orderId, LocalDateTime readyBy) {
     Order order = tryToFindOrder(orderId);
     order.acceptTicket(readyBy);
