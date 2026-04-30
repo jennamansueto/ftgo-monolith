@@ -2,6 +2,7 @@ package net.chrisrichardson.ftgo.consumerservice.web;
 
 import net.chrisrichardson.ftgo.consumerservice.api.web.CreateConsumerRequest;
 import net.chrisrichardson.ftgo.consumerservice.api.web.CreateConsumerResponse;
+import net.chrisrichardson.ftgo.consumerservice.api.web.GetConsumerResponse;
 import net.chrisrichardson.ftgo.consumerservice.api.web.ValidateOrderForConsumerRequest;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerNotFoundException;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
@@ -26,7 +27,7 @@ public class ConsumerController {
   @RequestMapping(method= RequestMethod.GET,  path="/{consumerId}")
   public ResponseEntity<GetConsumerResponse> get(@PathVariable long consumerId) {
     return consumerService.findById(consumerId)
-            .map(consumer -> new ResponseEntity<>(new GetConsumerResponse(consumer.getName()), HttpStatus.OK))
+            .map(consumer -> new ResponseEntity<>(new GetConsumerResponse(consumer.getId(), consumer.getName()), HttpStatus.OK))
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
   }
 
