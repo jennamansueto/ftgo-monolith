@@ -5,7 +5,6 @@ import net.chrisrichardson.ftgo.consumerservice.api.web.ValidateOrderForConsumer
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
@@ -28,12 +27,7 @@ public class ConsumerServiceProxy implements ConsumerServiceClient {
     String url = String.format("%s/consumers/%d/validate", consumerServiceUrl, consumerId);
     ValidateOrderForConsumerRequest request = new ValidateOrderForConsumerRequest(orderTotal);
     try {
-      ResponseEntity<Void> response = restTemplate.postForEntity(url, request, Void.class);
-      if (!response.getStatusCode().is2xxSuccessful()) {
-        throw new ConsumerVerificationException(
-                String.format("Consumer validation failed for consumer %d with status %s",
-                        consumerId, response.getStatusCode()));
-      }
+      restTemplate.postForEntity(url, request, Void.class);
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
         throw new ConsumerVerificationException(
