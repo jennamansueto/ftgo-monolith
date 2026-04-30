@@ -67,4 +67,12 @@ public class Courier {
   public List<Action> actionsForDelivery(Order order) {
     return plan.actionsForDelivery(order);
   }
+
+  public List<Action> actionsForOrder(long orderId) {
+    return plan.actionsForOrder(orderId);
+  }
+
+  public void cancelDeliveryByOrderId(long orderId) {
+    plan.removeDeliveryByOrderId(orderId);
+  }
 }

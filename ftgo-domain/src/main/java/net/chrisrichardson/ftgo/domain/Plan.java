@@ -25,4 +25,12 @@ public class Plan {
   public List<Action> actionsForDelivery(Order order) {
     return actions.stream().filter(action -> action.actionFor(order)).collect(Collectors.toList());
   }
+
+  public List<Action> actionsForOrder(long orderId) {
+    return actions.stream().filter(action -> action.actionForOrder(orderId)).collect(Collectors.toList());
+  }
+
+  public void removeDeliveryByOrderId(long orderId) {
+    actions = actions.stream().filter(action -> !action.actionForOrder(orderId)).collect(Collectors.toList());
+  }
 }
