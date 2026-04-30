@@ -34,7 +34,7 @@ services:
       mysql:
         condition: service_healthy
       restaurant-service:
-        condition: service_started
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql/ftgo
       SPRING_DATASOURCE_USERNAME: mysqluser
