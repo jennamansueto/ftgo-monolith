@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -45,6 +46,10 @@ public class ConsumerServiceProxy implements ConsumerServiceClient {
       throw new ConsumerVerificationException(
               String.format("Consumer validation failed for consumer %d: %s",
                       consumerId, e.getMessage()), e);
+    } catch (HttpServerErrorException e) {
+      logger.error("Consumer service error at {}: {}", consumerServiceUrl, e.getStatusCode(), e);
+      throw new ConsumerServiceUnavailableException(
+              "Consumer service returned error: " + e.getMessage(), e);
     } catch (ResourceAccessException e) {
       logger.error("Consumer service unavailable at {}", consumerServiceUrl, e);
       throw new ConsumerServiceUnavailableException(
