@@ -1,5 +1,6 @@
 package net.chrisrichardson.ftgo;
 
+import net.chrisrichardson.ftgo.consumerservice.web.ConsumerWebConfiguration;
 import net.chrisrichardson.ftgo.endtoendtests.common.AbstractEndToEndTests;
 import net.chrisrichardson.ftgo.orderservice.main.OrderServiceConfiguration;
 import net.chrisrichardson.ftgo.restaurantservice.RestaurantServiceConfiguration;
@@ -19,7 +20,8 @@ public class FtgoApplicationTest extends AbstractEndToEndTests {
   @Configuration
   @EnableAutoConfiguration
   @ComponentScan
-  @Import({OrderServiceConfiguration.class,
+  @Import({ConsumerWebConfiguration.class,
+          OrderServiceConfiguration.class,
           RestaurantServiceConfiguration.class})
   public static class Config {
 
