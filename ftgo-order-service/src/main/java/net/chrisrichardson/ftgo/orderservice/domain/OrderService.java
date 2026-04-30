@@ -1,6 +1,5 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
@@ -9,9 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -23,21 +20,21 @@ public class OrderService {
 
   private RestaurantRepository restaurantRepository;
 
-  private Optional<MeterRegistry> meterRegistry;
-
   private ConsumerServiceClient consumerServiceClient;
+  private OrderPersistenceService orderPersistenceService;
   private CourierRepository courierRepository;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
-                      Optional<MeterRegistry> meterRegistry,
-                      ConsumerServiceClient consumerServiceClient, CourierRepository courierRepository) {
+                      ConsumerServiceClient consumerServiceClient,
+                      OrderPersistenceService orderPersistenceService,
+                      CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
-    this.meterRegistry = meterRegistry;
     this.consumerServiceClient = consumerServiceClient;
+    this.orderPersistenceService = orderPersistenceService;
     this.courierRepository = courierRepository;
   }
 
@@ -52,18 +49,7 @@ public class OrderService {
 
     consumerServiceClient.validateOrderForConsumer(consumerId, order.getOrderTotal());
 
-    return saveOrder(order);
-  }
-
-  @Transactional
-  public Order saveOrder(Order order) {
-    orderRepository.save(order);
-
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
-
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
+    return orderPersistenceService.saveOrder(order);
   }
 
   private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
