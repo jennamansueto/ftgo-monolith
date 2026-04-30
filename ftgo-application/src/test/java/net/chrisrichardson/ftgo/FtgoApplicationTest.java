@@ -7,14 +7,15 @@ import net.chrisrichardson.ftgo.restaurantservice.RestaurantServiceConfiguration
 import org.junit.runner.RunWith;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes=FtgoApplicationTest.Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes=FtgoApplicationTest.Config.class,
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
+        properties = {"server.port=8091", "consumer.service.url=http://localhost:8091"})
 public class FtgoApplicationTest extends AbstractEndToEndTests {
 
   @Configuration
@@ -27,9 +28,6 @@ public class FtgoApplicationTest extends AbstractEndToEndTests {
 
   }
 
-  @LocalServerPort
-  private int port;
-
   @Override
   public String getHost() {
     return "localhost";
@@ -37,6 +35,6 @@ public class FtgoApplicationTest extends AbstractEndToEndTests {
 
   @Override
   public int getApplicationPort() {
-    return port;
+    return 8091;
   }
 }
