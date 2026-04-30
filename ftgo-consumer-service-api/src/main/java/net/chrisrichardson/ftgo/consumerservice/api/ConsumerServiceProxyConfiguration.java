@@ -21,6 +21,12 @@ public class ConsumerServiceProxyConfiguration {
   }
 
   @Bean
+  public ConsumerApiProxyController consumerApiProxyController(
+          @Value("${consumer.service.url}") String consumerServiceUrl) {
+    return new ConsumerApiProxyController(consumerServiceRestTemplate(), consumerServiceUrl);
+  }
+
+  @Bean
   public RestTemplate consumerServiceRestTemplate() {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
     factory.setConnectTimeout(5000);
