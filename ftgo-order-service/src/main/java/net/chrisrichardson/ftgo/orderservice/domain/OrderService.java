@@ -12,59 +12,46 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
-@Transactional
 public class OrderService {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
   private OrderRepository orderRepository;
 
-  private RestaurantRepository restaurantRepository;
+  private RestaurantServiceClient restaurantServiceClient;
 
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
   private CourierRepository courierRepository;
+  private OrderPersistenceService orderPersistenceService;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
-                      RestaurantRepository restaurantRepository,
+                      RestaurantServiceClient restaurantServiceClient,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService, CourierRepository courierRepository,
+                      OrderPersistenceService orderPersistenceService) {
 
     this.orderRepository = orderRepository;
-    this.restaurantRepository = restaurantRepository;
+    this.restaurantServiceClient = restaurantServiceClient;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierRepository = courierRepository;
+    this.orderPersistenceService = orderPersistenceService;
   }
 
-  @Transactional
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
+    Restaurant restaurant = restaurantServiceClient.findById(restaurantId)
             .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
-
 
     List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
 
-    Order order = new Order(consumerId, restaurant, orderLineItems);
-
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
-
-    // TODO - charge a credit card too
-
-    orderRepository.save(order);
-
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
-
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
+    return orderPersistenceService.saveOrder(consumerId, restaurant, orderLineItems);
   }
 
   private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
@@ -90,6 +77,7 @@ public class OrderService {
     return order;
   }
 
+  @Transactional
   public void accept(long orderId, LocalDateTime readyBy) {
     Order order = tryToFindOrder(orderId);
     order.acceptTicket(readyBy);
