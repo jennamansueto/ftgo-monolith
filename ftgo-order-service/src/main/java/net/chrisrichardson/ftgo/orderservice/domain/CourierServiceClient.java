@@ -31,6 +31,9 @@ public class CourierServiceClient {
                 courierServiceUrl + "/couriers/schedule-delivery",
                 new ScheduleDeliveryRequest(orderId, readyBy),
                 ScheduleDeliveryResponse.class);
+            if (response == null) {
+                throw new RuntimeException("Courier service returned empty response for orderId=" + orderId);
+            }
             return response.getCourierId();
         } catch (Exception e) {
             logger.error("Error calling courier service", e);

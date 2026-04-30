@@ -51,7 +51,7 @@ public class OrderController {
   @RequestMapping(path = "/{orderId}", method = RequestMethod.GET)
   public ResponseEntity<GetOrderResponse> getOrder(@PathVariable long orderId) {
     Optional<Order> order = orderRepository.findById(orderId);
-    return order.map(o -> new ResponseEntity<>(makeGetOrderResponse(o), HttpStatus.OK)).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    return order.map(o -> new ResponseEntity<>(makeGetOrderResponseWithActions(o), HttpStatus.OK)).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
   }
 
   @RequestMapping(method = RequestMethod.GET)
@@ -64,13 +64,13 @@ public class OrderController {
     }
     List<GetOrderResponse> orders = orderList
             .stream()
-            .map(this::makeGetOrderResponse)
+            .map(this::makeGetOrderSummary)
             .collect(Collectors.toList());
 
     return new ResponseEntity<>(orders, HttpStatus.OK);
   }
 
-  private GetOrderResponse makeGetOrderResponse(Order order) {
+  private GetOrderResponse makeGetOrderResponseWithActions(Order order) {
     Long courierId = order.getAssignedCourierId();
     List<CourierActionDTO> courierActions = null;
     if (courierId != null) {
@@ -85,11 +85,21 @@ public class OrderController {
     );
   }
 
+  private GetOrderResponse makeGetOrderSummary(Order order) {
+    return new GetOrderResponse(order.getId(),
+            order.getOrderState().name(),
+            order.getOrderTotal(),
+            order.getRestaurant().getName(),
+            order.getAssignedCourierId(),
+            null
+    );
+  }
+
   @RequestMapping(path = "/{orderId}/cancel", method = RequestMethod.POST)
   public ResponseEntity<GetOrderResponse> cancel(@PathVariable long orderId) {
     try {
       Order order = orderService.cancel(orderId);
-      return new ResponseEntity<>(makeGetOrderResponse(order), HttpStatus.OK);
+      return new ResponseEntity<>(makeGetOrderResponseWithActions(order), HttpStatus.OK);
     } catch (OrderNotFoundException e) {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
@@ -99,7 +109,7 @@ public class OrderController {
   public ResponseEntity<GetOrderResponse> revise(@PathVariable long orderId, @RequestBody ReviseOrderRequest request) {
     try {
       Order order = orderService.reviseOrder(orderId, new OrderRevision(Optional.empty(), request.getRevisedLineItemQuantities()));
-      return new ResponseEntity<>(makeGetOrderResponse(order), HttpStatus.OK);
+      return new ResponseEntity<>(makeGetOrderResponseWithActions(order), HttpStatus.OK);
     } catch (OrderNotFoundException e) {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
