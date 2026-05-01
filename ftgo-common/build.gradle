@@ -11,6 +11,7 @@ dependencies {
     implementation 'mysql:mysql-connector-java:5.1.39'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.junit.vintage:junit-vintage-engine"
 
     runtimeOnly "javax.xml.bind:jaxb-api:2.3.1"
     runtimeOnly "org.glassfish.jaxb:jaxb-runtime:2.3.9"

@@ -46,10 +46,20 @@ dependencies {
     implementation 'javax.el:javax.el-api:2.2.5'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.junit.vintage:junit-vintage-engine"
 
-    testImplementation 'io.rest-assured:rest-assured:5.3.2'
-    testImplementation 'io.rest-assured:spring-mock-mvc:5.3.2'
-    testImplementation "io.rest-assured:json-path:5.3.2"
+    testImplementation("io.rest-assured:rest-assured:$restAssuredVersion") {
+        exclude group: 'org.apache.groovy'
+    }
+    testImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion") {
+        exclude group: 'org.apache.groovy'
+    }
+    testImplementation("io.rest-assured:json-path:$restAssuredVersion") {
+        exclude group: 'org.apache.groovy'
+    }
+    testImplementation 'org.apache.groovy:groovy:4.0.21'
+    testImplementation 'org.apache.groovy:groovy-xml:4.0.21'
+    testImplementation 'org.apache.groovy:groovy-json:4.0.21'
 
     testImplementation project(":ftgo-test-util")
 }

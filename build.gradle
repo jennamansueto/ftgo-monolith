@@ -25,6 +25,8 @@ subprojects {
 
     group = "net.chrisrichardson.ftgo"
 
+    ext['rest-assured.version'] = restAssuredVersion
+
     dependencyManagement {
         imports {
             mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"

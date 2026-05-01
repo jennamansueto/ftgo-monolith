@@ -8,6 +8,21 @@ dependencies {
     api "io.eventuate.util:eventuate-util-test:$eventuateUtilVersion"
 
     api "org.springframework.boot:spring-boot-starter-test"
-    api "io.rest-assured:rest-assured:$restAssuredVersion"
+    api "org.junit.vintage:junit-vintage-engine"
+    api("io.rest-assured:rest-assured:$restAssuredVersion") {
+        exclude group: 'org.apache.groovy', module: 'groovy'
+        exclude group: 'org.apache.groovy', module: 'groovy-xml'
+    }
+    api("io.rest-assured:json-path:$restAssuredVersion") {
+        exclude group: 'org.apache.groovy', module: 'groovy'
+        exclude group: 'org.apache.groovy', module: 'groovy-json'
+    }
+    api("io.rest-assured:xml-path:$restAssuredVersion") {
+        exclude group: 'org.apache.groovy', module: 'groovy'
+        exclude group: 'org.apache.groovy', module: 'groovy-xml'
+    }
+    api 'org.apache.groovy:groovy:4.0.21'
+    api 'org.apache.groovy:groovy-xml:4.0.21'
+    api 'org.apache.groovy:groovy-json:4.0.21'
     api "com.jayway.jsonpath:json-path:2.9.0"
 }
