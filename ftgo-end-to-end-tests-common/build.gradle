@@ -7,6 +7,6 @@ dependencies {
 
 
     implementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-    implementation "com.jayway.restassured:rest-assured:$restAssuredVersion"
+    implementation "io.rest-assured:rest-assured:$restAssuredVersion"
     implementation "com.jayway.jsonpath:json-path:2.3.0"
 }
