@@ -3,6 +3,7 @@ dependencies {
     implementation project(":ftgo-restaurant-service-api")
     implementation project(":ftgo-order-service-api")
     implementation project(":ftgo-courier-service-api")
+    implementation project(":ftgo-common")
     implementation "io.eventuate.util:eventuate-util-test:$eventuateUtilVersion"
 
 

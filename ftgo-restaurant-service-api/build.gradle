@@ -1,4 +1,4 @@
 dependencies {
-    implementation project(":ftgo-common")
+    api project(":ftgo-common")
     implementation 'org.apache.commons:commons-lang3:3.14.0'
 }

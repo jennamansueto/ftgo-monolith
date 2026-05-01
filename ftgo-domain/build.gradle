@@ -1,5 +1,5 @@
 dependencies {
-    implementation project(":ftgo-common")
-    implementation project(":ftgo-common-jpa")
+    api project(":ftgo-common")
+    api project(":ftgo-common-jpa")
     implementation 'org.apache.commons:commons-lang3:3.14.0'
 }

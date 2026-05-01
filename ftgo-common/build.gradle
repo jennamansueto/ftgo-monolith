@@ -2,15 +2,15 @@ dependencies {
     // TODO eliminate this - problem is value objects like Money need to be embeddable.
     // TODO https://en.wikibooks.org/wiki/Java_Persistence/Embeddables#Example_of_an_Embeddable_object_XML
 
-    implementation "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
+    api "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
 
     // Jackson — let Spring Boot BOM manage versions, or pin to 2.14.x compatible with Spring Boot 2.7
-    implementation "com.fasterxml.jackson.core:jackson-core"
-    implementation "com.fasterxml.jackson.core:jackson-databind"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+    api "com.fasterxml.jackson.core:jackson-core"
+    api "com.fasterxml.jackson.core:jackson-databind"
+    api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
 
     // Replace commons-lang 2.x with commons-lang3
-    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    api 'org.apache.commons:commons-lang3:3.14.0'
 
     // Update MySQL connector — new artifact coordinates for 8.x
     implementation 'com.mysql:mysql-connector-j:8.0.33'
