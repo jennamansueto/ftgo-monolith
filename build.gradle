@@ -18,6 +18,14 @@ plugins {
 subprojects {
 
     apply plugin: "java-library"
+    apply plugin: "io.spring.dependency-management"
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+        }
+    }
+
     sourceCompatibility = '17'
     targetCompatibility = '17'
 
