@@ -3,7 +3,6 @@
 // buildscript {
 //     repositories {
 //         mavenCentral()
-//         jcenter()
 //     }
 //     dependencies {
 //         classpath "com.avast.gradle:gradle-docker-compose-plugin:0.14.13"
@@ -11,7 +10,6 @@
 // }
 
 // apply plugin: 'docker-compose'
-apply plugin:'io.spring.dependency-management'
 
 apply plugin: IntegrationTestsPlugin
 
@@ -33,26 +31,35 @@ apply plugin: IntegrationTestsPlugin
 
 dependencies {
 
+    implementation project(":common-swagger")
+    implementation project(":ftgo-domain")
 
-    compile project(":common-swagger")
-    compile project(":ftgo-domain")
+    implementation project(":ftgo-consumer-service-api")
+    implementation project(":ftgo-restaurant-service-api")
+    implementation project(":ftgo-order-service-api")
+    implementation project(":ftgo-consumer-service")
 
-    compile project(":ftgo-consumer-service-api")
-    compile project(":ftgo-restaurant-service-api")
-    compile project(":ftgo-order-service-api")
-    compile project(":ftgo-consumer-service")
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "io.micrometer:micrometer-registry-prometheus:$micrometerVersion"
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation 'javax.el:javax.el-api:2.2.5'
 
-    compile "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
-    compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
-    compile "io.micrometer:micrometer-registry-prometheus:$micrometerVersion"
-    compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
-    compile 'javax.el:javax.el-api:2.2.5'
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.junit.vintage:junit-vintage-engine"
 
-    testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+    testImplementation("io.rest-assured:rest-assured:$restAssuredVersion") {
+        exclude group: 'org.apache.groovy'
+    }
+    testImplementation("io.rest-assured:spring-mock-mvc:$restAssuredVersion") {
+        exclude group: 'org.apache.groovy'
+    }
+    testImplementation("io.rest-assured:json-path:$restAssuredVersion") {
+        exclude group: 'org.apache.groovy'
+    }
+    testImplementation 'org.apache.groovy:groovy:4.0.21'
+    testImplementation 'org.apache.groovy:groovy-xml:4.0.21'
+    testImplementation 'org.apache.groovy:groovy-json:4.0.21'
 
-    testCompile 'io.rest-assured:rest-assured:3.0.6'
-    testCompile 'io.rest-assured:spring-mock-mvc:3.0.6'
-    testCompile "io.rest-assured:json-path:3.0.6"
-
-    testCompile project(":ftgo-test-util")
+    testImplementation project(":ftgo-test-util")
 }
