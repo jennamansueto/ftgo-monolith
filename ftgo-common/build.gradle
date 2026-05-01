@@ -1,20 +1,18 @@
+apply plugin: 'java-library'
+
 dependencies {
-    // TODO eliminate this - problem is value objects like Money need to be embeddable.
-    // TODO https://en.wikibooks.org/wiki/Java_Persistence/Embeddables#Example_of_an_Embeddable_object_XML
+    api "org.springframework.boot:spring-boot-starter-data-jpa"
 
-    compile "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
+    api 'com.fasterxml.jackson.core:jackson-core'
+    api 'com.fasterxml.jackson.core:jackson-databind'
+    api 'org.apache.commons:commons-lang3:3.14.0'
+    api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
 
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.9.7'
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
-    compile group: 'commons-lang', name: 'commons-lang', version: '2.6'
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.7"
+    implementation 'mysql:mysql-connector-java:5.1.39'
 
-    compile 'mysql:mysql-connector-java:5.1.39'
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
 
-    testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-
-    runtime "javax.xml.bind:jaxb-api:2.2.11"
-    runtime "com.sun.xml.bind:jaxb-core:2.2.11"
-    runtime "com.sun.xml.bind:jaxb-impl:2.2.11"
-    runtime "javax.activation:activation:1.1.1"
+    runtimeOnly "javax.xml.bind:jaxb-api:2.3.1"
+    runtimeOnly "org.glassfish.jaxb:jaxb-runtime:2.3.9"
+    runtimeOnly "javax.activation:javax.activation-api:1.2.0"
 }
