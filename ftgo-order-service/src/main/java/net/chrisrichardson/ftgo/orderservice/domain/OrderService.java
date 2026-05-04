@@ -2,6 +2,7 @@ package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
+import net.chrisrichardson.ftgo.courierservice.api.ActionDTO;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
@@ -9,10 +10,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -28,19 +29,20 @@ public class OrderService {
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
-  private CourierRepository courierRepository;
+  private CourierServiceClient courierServiceClient;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService,
+                      CourierServiceClient courierServiceClient) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
-    this.courierRepository = courierRepository;
+    this.courierServiceClient = courierServiceClient;
   }
 
   @Transactional
@@ -97,16 +99,16 @@ public class OrderService {
   }
 
   public void scheduleDelivery(Order order, LocalDateTime readyBy) {
+    List<Long> availableCourierIds = courierServiceClient.findAllAvailableIds();
+    Long courierId = availableCourierIds.get(random.nextInt(availableCourierIds.size()));
 
-    // Stupid implementation
+    List<ActionDTO> actions = Arrays.asList(
+        ActionDTO.makePickup(order.getId()),
+        ActionDTO.makeDropoff(order.getId(), readyBy.plusMinutes(30))
+    );
+    courierServiceClient.addActions(courierId, actions);
 
-    List<Courier> couriers = courierRepository.findAllAvailable();
-    Courier courier = couriers.get(random.nextInt(couriers.size()));
-    courier.addAction(Action.makePickup(order));
-    courier.addAction(Action.makeDropoff(order, readyBy.plusMinutes(30)));
-
-    order.schedule(courier);
-
+    order.schedule(courierId);
   }
 
 
