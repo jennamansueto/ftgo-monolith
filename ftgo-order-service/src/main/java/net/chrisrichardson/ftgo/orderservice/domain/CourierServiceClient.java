@@ -19,6 +19,10 @@ public class CourierServiceClient {
     this.courierServiceUrl = courierServiceUrl;
   }
 
+  public void setCourierServiceUrl(String courierServiceUrl) {
+    this.courierServiceUrl = courierServiceUrl;
+  }
+
   public List<Long> findAllAvailableIds() {
     String url = courierServiceUrl + "/couriers/available";
     ResponseEntity<List<Long>> response = restTemplate.exchange(
