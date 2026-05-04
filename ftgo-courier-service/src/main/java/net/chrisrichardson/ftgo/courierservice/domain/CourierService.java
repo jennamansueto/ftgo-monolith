@@ -3,9 +3,15 @@ package net.chrisrichardson.ftgo.courierservice.domain;
 
 import net.chrisrichardson.ftgo.common.Address;
 import net.chrisrichardson.ftgo.common.PersonName;
+import net.chrisrichardson.ftgo.courierservice.api.ActionDTO;
+import net.chrisrichardson.ftgo.domain.Action;
+import net.chrisrichardson.ftgo.domain.ActionType;
 import net.chrisrichardson.ftgo.domain.Courier;
 import net.chrisrichardson.ftgo.domain.CourierRepository;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class CourierService {
 
@@ -40,6 +46,21 @@ public class CourierService {
 
   public Courier findCourierById(long courierId) {
     return courierRepository.findById(courierId).get();
+  }
+
+  public List<Long> findAllAvailableIds() {
+    return courierRepository.findAllAvailable().stream()
+        .map(Courier::getId)
+        .collect(Collectors.toList());
+  }
+
+  @Transactional
+  public void addActions(long courierId, List<ActionDTO> actions) {
+    Courier courier = courierRepository.findById(courierId)
+        .orElseThrow(() -> new RuntimeException("Courier not found: " + courierId));
+    for (ActionDTO action : actions) {
+      courier.addAction(new Action(ActionType.valueOf(action.getType()), action.getOrderId(), action.getTime()));
+    }
   }
 
 }

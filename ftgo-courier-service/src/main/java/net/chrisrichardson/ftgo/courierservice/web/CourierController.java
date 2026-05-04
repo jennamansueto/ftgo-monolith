@@ -1,5 +1,6 @@
 package net.chrisrichardson.ftgo.courierservice.web;
 
+import net.chrisrichardson.ftgo.courierservice.api.AddActionsRequest;
 import net.chrisrichardson.ftgo.courierservice.api.CourierAvailability;
 import net.chrisrichardson.ftgo.courierservice.api.CreateCourierRequest;
 import net.chrisrichardson.ftgo.courierservice.api.CreateCourierResponse;
@@ -8,6 +9,8 @@ import net.chrisrichardson.ftgo.domain.Courier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 public class CourierController {
@@ -34,6 +37,18 @@ public class CourierController {
   public ResponseEntity<Courier> get(@PathVariable long courierId) {
     Courier courier = courierService.findCourierById(courierId);
     return new ResponseEntity<>(courier, HttpStatus.OK);
+  }
+
+  @RequestMapping(path="/couriers/available", method= RequestMethod.GET)
+  public ResponseEntity<List<Long>> getAvailableCouriers() {
+    List<Long> courierIds = courierService.findAllAvailableIds();
+    return new ResponseEntity<>(courierIds, HttpStatus.OK);
+  }
+
+  @RequestMapping(path="/couriers/{courierId}/actions", method= RequestMethod.POST)
+  public ResponseEntity<Void> addActions(@PathVariable long courierId, @RequestBody AddActionsRequest request) {
+    courierService.addActions(courierId, request.getActions());
+    return new ResponseEntity<>(HttpStatus.OK);
   }
 
 }
