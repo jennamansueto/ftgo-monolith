@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -23,8 +22,6 @@ public class OrderService {
 
   private OrderRepository orderRepository;
 
-  private RestaurantRepository restaurantRepository;
-
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
@@ -32,31 +29,22 @@ public class OrderService {
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
-                      RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
                       ConsumerService consumerService, CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
-    this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
     this.courierRepository = courierRepository;
   }
 
   @Transactional
-  public Order createOrder(long consumerId, long restaurantId,
-                           List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
+  public Order createOrder(long consumerId, long restaurantId, String restaurantName,
+                           List<OrderLineItem> orderLineItems) {
 
-
-    List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
-
-    Order order = new Order(consumerId, restaurant, orderLineItems);
+    Order order = new Order(consumerId, restaurantId, restaurantName, orderLineItems);
 
     consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
-
-    // TODO - charge a credit card too
 
     orderRepository.save(order);
 
@@ -65,13 +53,6 @@ public class OrderService {
     meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
 
     return order;
-  }
-
-  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
-    return lineItems.stream().map(li -> {
-      MenuItem om = restaurant.findMenuItem(li.getMenuItemId()).orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
-      return new OrderLineItem(li.getMenuItemId(), om.getName(), om.getPrice(), li.getQuantity());
-    }).collect(toList());
   }
 
   @Transactional

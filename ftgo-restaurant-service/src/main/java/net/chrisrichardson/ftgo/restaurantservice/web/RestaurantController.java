@@ -1,12 +1,17 @@
 package net.chrisrichardson.ftgo.restaurantservice.web;
 
+import net.chrisrichardson.ftgo.domain.MenuItem;
 import net.chrisrichardson.ftgo.domain.Restaurant;
 import net.chrisrichardson.ftgo.restaurantservice.domain.RestaurantService;
 import net.chrisrichardson.ftgo.restaurantservice.events.CreateRestaurantRequest;
+import net.chrisrichardson.ftgo.restaurantservice.events.MenuItemDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(path = "/restaurants")
@@ -29,8 +34,12 @@ public class RestaurantController {
   }
 
   private GetRestaurantResponse makeGetRestaurantResponse(Restaurant r) {
-    return new GetRestaurantResponse(r.getId(), r.getName());
+    return new GetRestaurantResponse(r.getId(), r.getName(), toMenuItemDTOs(r));
   }
 
-
+  private List<MenuItemDTO> toMenuItemDTOs(Restaurant r) {
+    return r.getMenuItems().stream()
+            .map(mi -> new MenuItemDTO(mi.getId(), mi.getName(), mi.getPrice()))
+            .collect(Collectors.toList());
+  }
 }

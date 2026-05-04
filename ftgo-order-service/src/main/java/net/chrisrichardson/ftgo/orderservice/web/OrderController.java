@@ -1,14 +1,19 @@
 package net.chrisrichardson.ftgo.orderservice.web;
 
+import net.chrisrichardson.ftgo.domain.MenuItem;
 import net.chrisrichardson.ftgo.domain.Order;
+import net.chrisrichardson.ftgo.domain.OrderLineItem;
 import net.chrisrichardson.ftgo.domain.OrderRepository;
 import net.chrisrichardson.ftgo.domain.OrderRevision;
+import net.chrisrichardson.ftgo.domain.Restaurant;
 import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderRequest;
 import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderResponse;
 import net.chrisrichardson.ftgo.orderservice.api.web.OrderAcceptance;
 import net.chrisrichardson.ftgo.orderservice.api.web.ReviseOrderRequest;
+import net.chrisrichardson.ftgo.orderservice.domain.InvalidMenuItemIdException;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderNotFoundException;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderService;
+import net.chrisrichardson.ftgo.orderservice.domain.RestaurantServiceClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,19 +32,39 @@ public class OrderController {
 
   private OrderRepository orderRepository;
 
+  private RestaurantServiceClient restaurantServiceClient;
 
-  public OrderController(OrderService orderService, OrderRepository orderRepository) {
+
+  public OrderController(OrderService orderService, OrderRepository orderRepository,
+                         RestaurantServiceClient restaurantServiceClient) {
     this.orderService = orderService;
     this.orderRepository = orderRepository;
+    this.restaurantServiceClient = restaurantServiceClient;
   }
 
   @RequestMapping(method = RequestMethod.POST)
   public CreateOrderResponse create(@RequestBody CreateOrderRequest request) {
+    Restaurant restaurant = restaurantServiceClient.findById(request.getRestaurantId());
+
+    List<OrderLineItem> orderLineItems = makeOrderLineItems(
+            request.getLineItems().stream()
+                    .map(x -> new MenuItemIdAndQuantity(x.getMenuItemId(), x.getQuantity()))
+                    .collect(toList()),
+            restaurant);
+
     Order order = orderService.createOrder(request.getConsumerId(),
-            request.getRestaurantId(),
-            request.getLineItems().stream().map(x -> new MenuItemIdAndQuantity(x.getMenuItemId(), x.getQuantity())).collect(toList())
+            restaurant.getId(),
+            restaurant.getName(),
+            orderLineItems
     );
     return new CreateOrderResponse(order.getId());
+  }
+
+  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
+    return lineItems.stream().map(li -> {
+      MenuItem om = restaurant.findMenuItem(li.getMenuItemId()).orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
+      return new OrderLineItem(li.getMenuItemId(), om.getName(), om.getPrice(), li.getQuantity());
+    }).collect(toList());
   }
 
 
@@ -69,7 +94,7 @@ public class OrderController {
     return new GetOrderResponse(order.getId(),
             order.getOrderState().name(),
             order.getOrderTotal(),
-            order.getRestaurant().getName(),
+            order.getRestaurantName(),
             order.getAssignedCourier() == null ? null : order.getAssignedCourier().getId(),
             order.getAssignedCourier() == null ? null : order.getAssignedCourier().actionsForDelivery(order)
     );
