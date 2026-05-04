@@ -47,9 +47,13 @@ public abstract class AbstractEndToEndTests {
   private int courierId;
 
   private String baseUrl(int port, String path, String... pathElements) {
-    assertNotNull("host", getHost());
+    return baseUrl(getHost(), port, path, pathElements);
+  }
+
+  private String baseUrl(String host, int port, String path, String... pathElements) {
+    assertNotNull("host", host);
     StringBuilder sb = new StringBuilder("http://");
-    sb.append(getHost());
+    sb.append(host);
     sb.append(":");
     sb.append(port);
     sb.append("/");
@@ -65,7 +69,7 @@ public abstract class AbstractEndToEndTests {
   }
 
   private String consumerBaseUrl(String... pathElements) {
-    return baseUrl(getApplicationPort(), "consumers", pathElements);
+    return baseUrl(getConsumerServiceHost(), getConsumerServicePort(), "consumers", pathElements);
   }
 
   private String restaurantBaseUrl(String... pathElements) {
@@ -384,4 +388,12 @@ public abstract class AbstractEndToEndTests {
   public abstract String getHost();
 
   public abstract int getApplicationPort();
+
+  public String getConsumerServiceHost() {
+    return getHost();
+  }
+
+  public int getConsumerServicePort() {
+    return getApplicationPort();
+  }
 }
