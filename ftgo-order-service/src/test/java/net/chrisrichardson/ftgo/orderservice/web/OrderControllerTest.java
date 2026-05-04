@@ -5,6 +5,7 @@ import net.chrisrichardson.ftgo.common.MoneyModule;
 import net.chrisrichardson.ftgo.domain.OrderRepository;
 import net.chrisrichardson.ftgo.orderservice.OrderDetailsMother;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderService;
+import net.chrisrichardson.ftgo.orderservice.domain.RestaurantServiceClient;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -24,13 +25,15 @@ public class OrderControllerTest {
 
   private OrderService orderService;
   private OrderRepository orderRepository;
+  private RestaurantServiceClient restaurantServiceClient;
   private OrderController orderController;
 
   @Before
   public void setUp() throws Exception {
     orderService = mock(OrderService.class);
     orderRepository = mock(OrderRepository.class);
-    orderController = new OrderController(orderService, orderRepository);
+    restaurantServiceClient = mock(RestaurantServiceClient.class);
+    orderController = new OrderController(orderService, orderRepository, restaurantServiceClient);
   }
 
 
@@ -56,7 +59,7 @@ public class OrderControllerTest {
     when(orderRepository.findById(1L)).thenReturn(Optional.empty());
 
     given().
-            standaloneSetup(configureControllers(new OrderController(orderService, orderRepository))).
+            standaloneSetup(configureControllers(new OrderController(orderService, orderRepository, restaurantServiceClient))).
     when().
             get("/orders/1").
     then().
