@@ -1,6 +1,8 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
+import net.chrisrichardson.ftgo.common.MoneyModule;
 import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.CourierRepository;
 import net.chrisrichardson.ftgo.domain.DomainConfiguration;
@@ -10,7 +12,10 @@ import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCusto
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Collections;
 
 import java.util.Optional;
 
@@ -35,7 +40,12 @@ public class OrderConfiguration {
 
   @Bean
   public RestTemplate restaurantServiceRestTemplate() {
-    return new RestTemplate();
+    RestTemplate restTemplate = new RestTemplate();
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new MoneyModule());
+    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
+    restTemplate.setMessageConverters(Collections.singletonList(converter));
+    return restTemplate;
   }
 
   @Bean
