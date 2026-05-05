@@ -1,3 +1,5 @@
+apply plugin: FtgoServicePlugin
+
 dependencies {
     compile project(":common-swagger")
     compile project(":ftgo-consumer-service-api")
@@ -7,9 +9,28 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
 
+    compile "org.flywaydb:flyway-core:5.0.7"
+
     compile 'javax.el:javax.el-api:2.2.5'
 
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
     testCompile "com.jayway.restassured:rest-assured:$restAssuredVersion"
     testCompile "com.jayway.jsonpath:json-path:2.3.0"
+}
+
+springBoot {
+    mainClassName = 'net.chrisrichardson.ftgo.consumerservice.main.ConsumerServiceMain'
+}
+
+// Produce both a thin jar (default, used as a Gradle module dependency by other
+// subprojects such as ftgo-application's testCompile classpath) and a runnable
+// fat jar with the `boot` classifier (used by the Dockerfile and for running
+// the service standalone).
+bootJar {
+    baseName = 'ftgo-consumer-service'
+    classifier = 'boot'
+}
+
+jar {
+    enabled = true
 }
