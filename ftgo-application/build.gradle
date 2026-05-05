@@ -1,7 +1,7 @@
 apply plugin: FtgoServicePlugin
 
 dependencies {
-    compile project(":ftgo-consumer-service")
+    compile project(":ftgo-consumer-service-api")
     compile project(":ftgo-order-service")
     compile project(":ftgo-restaurant-service")
     compile project(":ftgo-courier-service")
@@ -9,5 +9,10 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
 
+    // Test scope only: keep ftgo-consumer-service available so the in-process
+    // FtgoApplicationTest can still bootstrap consumer endpoints alongside the
+    // monolith for end-to-end coverage. Production builds no longer bundle the
+    // consumer service.
+    testCompile project(":ftgo-consumer-service")
     testCompile project(":ftgo-end-to-end-tests-common")
 }
