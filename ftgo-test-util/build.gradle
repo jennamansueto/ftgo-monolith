@@ -1,3 +1,5 @@
+apply plugin: 'java-library'
+
 dependencies {
-    compile "junit:junit:4.12"
+    api 'junit:junit:4.12'
 }
