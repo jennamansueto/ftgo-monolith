@@ -23,6 +23,8 @@ dependencies {
     implementation 'javax.el:javax.el-api:3.0.0'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'junit:junit:4.13.2'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine'
     testImplementation 'io.rest-assured:rest-assured'
     testImplementation 'io.rest-assured:spring-mock-mvc'
     testImplementation 'io.rest-assured:json-path'

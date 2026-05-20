@@ -15,6 +15,8 @@ dependencies {
     api "io.eventuate.util:eventuate-util-test:$eventuateUtilVersion"
 
     api 'org.springframework.boot:spring-boot-starter-test'
+    api 'junit:junit:4.13.2'
+    api 'org.junit.vintage:junit-vintage-engine'
     api 'io.rest-assured:rest-assured'
     api 'io.rest-assured:json-path'
 }

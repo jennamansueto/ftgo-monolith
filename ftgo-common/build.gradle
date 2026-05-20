@@ -21,6 +21,8 @@ dependencies {
     api 'mysql:mysql-connector-java:8.0.33'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'junit:junit:4.13.2'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine'
 
     runtimeOnly 'javax.xml.bind:jaxb-api:2.3.1'
     runtimeOnly 'org.glassfish.jaxb:jaxb-runtime:2.3.9'

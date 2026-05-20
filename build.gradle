@@ -18,10 +18,18 @@ plugins {
 subprojects {
 
     apply plugin: "java"
+    apply plugin: "io.spring.dependency-management"
+
     sourceCompatibility = '17'
     targetCompatibility = '17'
 
     group = "net.chrisrichardson.ftgo"
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+        }
+    }
 
     repositories {
         mavenCentral()
@@ -37,6 +45,10 @@ subprojects {
             url "${project.rootDir}/build/repo"
         }
 
+    }
+
+    tasks.withType(Test) {
+        useJUnitPlatform()
     }
 
 }
