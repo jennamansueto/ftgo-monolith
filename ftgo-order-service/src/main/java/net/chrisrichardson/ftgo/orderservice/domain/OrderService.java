@@ -11,8 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -28,19 +26,16 @@ public class OrderService {
   private Optional<MeterRegistry> meterRegistry;
 
   private ConsumerService consumerService;
-  private CourierRepository courierRepository;
-  private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      ConsumerService consumerService) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
     this.consumerService = consumerService;
-    this.courierRepository = courierRepository;
   }
 
   @Transactional
@@ -90,23 +85,16 @@ public class OrderService {
     return order;
   }
 
-  public void accept(long orderId, LocalDateTime readyBy) {
+  /**
+   * Records the result of accepting an order whose delivery has already been scheduled with the
+   * (remote) courier service. The remote courier call happens in {@link OrderDeliveryService},
+   * OUTSIDE of this transaction; this method only performs local database work.
+   */
+  @Transactional
+  public void acceptOrderAndAssignCourier(long orderId, LocalDateTime readyBy, long courierId) {
     Order order = tryToFindOrder(orderId);
     order.acceptTicket(readyBy);
-    scheduleDelivery(order, readyBy);
-  }
-
-  public void scheduleDelivery(Order order, LocalDateTime readyBy) {
-
-    // Stupid implementation
-
-    List<Courier> couriers = courierRepository.findAllAvailable();
-    Courier courier = couriers.get(random.nextInt(couriers.size()));
-    courier.addAction(Action.makePickup(order));
-    courier.addAction(Action.makeDropoff(order, readyBy.plusMinutes(30)));
-
-    order.schedule(courier);
-
+    order.schedule(courierId);
   }
 
 

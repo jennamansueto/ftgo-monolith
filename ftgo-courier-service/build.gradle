@@ -1,14 +1,20 @@
+apply plugin: FtgoServicePlugin
+
 dependencies {
     compile project(":ftgo-courier-service-api")
 
     compile project(":common-swagger")
-    compile project(":ftgo-domain")
+    compile project(":ftgo-common")
+    compile project(":ftgo-common-jpa")
 
     compile "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
     compile "io.micrometer:micrometer-registry-prometheus:$micrometerVersion"
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
     compile 'javax.el:javax.el-api:2.2.5'
+
+    // Spring Boot 2.0.x requires Flyway 5.x at runtime
+    compile "org.flywaydb:flyway-core:5.2.4"
 
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
 
