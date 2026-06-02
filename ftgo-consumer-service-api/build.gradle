@@ -1,3 +1,7 @@
 dependencies {
     compile project(":ftgo-common")
+
+    // spring-web provides RestTemplate for the ConsumerServiceProxy.
+    // 5.0.7.RELEASE is the Spring Framework version managed by Spring Boot 2.0.3.RELEASE.
+    compile "org.springframework:spring-web:5.0.7.RELEASE"
 }
