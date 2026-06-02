@@ -3,8 +3,10 @@ apply plugin: FtgoServicePlugin
 dependencies {
     compile project(":ftgo-consumer-service")
     compile project(":ftgo-order-service")
-    compile project(":ftgo-restaurant-service")
     compile project(":ftgo-courier-service")
+    // Restaurant service is extracted into a standalone microservice; the monolith keeps only its
+    // API module (DTOs), pulled in transitively via ftgo-order-service.
+    compile project(":ftgo-restaurant-service-api")
 
     compile "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"

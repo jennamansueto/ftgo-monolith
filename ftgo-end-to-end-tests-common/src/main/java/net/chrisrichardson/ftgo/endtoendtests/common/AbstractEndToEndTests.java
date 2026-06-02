@@ -69,7 +69,7 @@ public abstract class AbstractEndToEndTests {
   }
 
   private String restaurantBaseUrl(String... pathElements) {
-    return baseUrl(getApplicationPort(), "restaurants", pathElements);
+    return baseUrl(getRestaurantServicePort(), "restaurants", pathElements);
   }
 
   private String orderBaseUrl(String... pathElements) {
@@ -384,4 +384,13 @@ public abstract class AbstractEndToEndTests {
   public abstract String getHost();
 
   public abstract int getApplicationPort();
+
+  /**
+   * Port of the (now extracted) restaurant service. Defaults to the application port for
+   * deployments where the restaurant service is still co-located; overridden by tests that
+   * run the restaurant service as a separate process (e.g. on port 8083 under Docker Compose).
+   */
+  public int getRestaurantServicePort() {
+    return getApplicationPort();
+  }
 }

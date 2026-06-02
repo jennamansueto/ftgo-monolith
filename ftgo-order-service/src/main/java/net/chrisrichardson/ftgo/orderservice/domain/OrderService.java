@@ -1,18 +1,18 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
+import net.chrisrichardson.ftgo.restaurantservice.events.MenuItemDTO;
+import net.chrisrichardson.ftgo.restaurantservice.events.RestaurantDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -23,55 +23,53 @@ public class OrderService {
 
   private OrderRepository orderRepository;
 
-  private RestaurantRepository restaurantRepository;
+  private RestaurantServiceClient restaurantServiceClient;
 
-  private Optional<MeterRegistry> meterRegistry;
+  private OrderPersistenceService orderPersistenceService;
 
-  private ConsumerService consumerService;
   private CourierRepository courierRepository;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
-                      RestaurantRepository restaurantRepository,
-                      Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      RestaurantServiceClient restaurantServiceClient,
+                      OrderPersistenceService orderPersistenceService,
+                      CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
-    this.restaurantRepository = restaurantRepository;
-    this.meterRegistry = meterRegistry;
-    this.consumerService = consumerService;
+    this.restaurantServiceClient = restaurantServiceClient;
+    this.orderPersistenceService = orderPersistenceService;
     this.courierRepository = courierRepository;
   }
 
-  @Transactional
+  /**
+   * Orchestrates order creation. The restaurant/menu lookup is a remote HTTP call and MUST NOT
+   * run inside a database transaction (it would hold a JDBC connection idle during network I/O).
+   * This method therefore runs with {@link Propagation#NOT_SUPPORTED} so any ambient transaction
+   * is suspended; the database write is delegated to {@link OrderPersistenceService#saveOrder},
+   * which runs in its own transaction.
+   */
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public Order createOrder(long consumerId, long restaurantId,
                            List<MenuItemIdAndQuantity> lineItems) {
-    Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
-
+    RestaurantDTO restaurant = restaurantServiceClient.findRestaurant(restaurantId);
 
     List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
 
-    Order order = new Order(consumerId, restaurant, orderLineItems);
-
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
-
-    // TODO - charge a credit card too
-
-    orderRepository.save(order);
-
-    meterRegistry.ifPresent(mr1 -> mr1.counter("approved_orders").increment());
-
-    meterRegistry.ifPresent(mr -> mr.counter("placed_orders").increment());
-
-    return order;
+    return orderPersistenceService.saveOrder(consumerId, restaurantId, restaurant.getName(), orderLineItems);
   }
 
-  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, Restaurant restaurant) {
+  private List<OrderLineItem> makeOrderLineItems(List<MenuItemIdAndQuantity> lineItems, RestaurantDTO restaurant) {
     return lineItems.stream().map(li -> {
-      MenuItem om = restaurant.findMenuItem(li.getMenuItemId()).orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
+      MenuItemDTO om = findMenuItem(restaurant, li.getMenuItemId())
+              .orElseThrow(() -> new InvalidMenuItemIdException(li.getMenuItemId()));
       return new OrderLineItem(li.getMenuItemId(), om.getName(), om.getPrice(), li.getQuantity());
     }).collect(toList());
+  }
+
+  private Optional<MenuItemDTO> findMenuItem(RestaurantDTO restaurant, String menuItemId) {
+    return restaurant.getMenuItems().stream()
+            .filter(mi -> mi.getId().equals(menuItemId))
+            .findFirst();
   }
 
   @Transactional
