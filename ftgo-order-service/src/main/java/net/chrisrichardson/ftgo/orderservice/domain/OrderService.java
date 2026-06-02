@@ -1,7 +1,6 @@
 package net.chrisrichardson.ftgo.orderservice.domain;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import net.chrisrichardson.ftgo.consumerservice.domain.ConsumerService;
 import net.chrisrichardson.ftgo.domain.*;
 import net.chrisrichardson.ftgo.orderservice.web.MenuItemIdAndQuantity;
 import org.slf4j.Logger;
@@ -27,35 +26,42 @@ public class OrderService {
 
   private Optional<MeterRegistry> meterRegistry;
 
-  private ConsumerService consumerService;
   private CourierRepository courierRepository;
   private Random random = new Random();
 
   public OrderService(OrderRepository orderRepository,
                       RestaurantRepository restaurantRepository,
                       Optional<MeterRegistry> meterRegistry,
-                      ConsumerService consumerService, CourierRepository courierRepository) {
+                      CourierRepository courierRepository) {
 
     this.orderRepository = orderRepository;
     this.restaurantRepository = restaurantRepository;
     this.meterRegistry = meterRegistry;
-    this.consumerService = consumerService;
     this.courierRepository = courierRepository;
   }
 
+  /**
+   * Builds (but does not persist) the order within a read transaction. The remote consumer
+   * validation deliberately happens AFTER this method returns, outside any transaction
+   * (see {@link OrderCreator}).
+   */
   @Transactional
-  public Order createOrder(long consumerId, long restaurantId,
-                           List<MenuItemIdAndQuantity> lineItems) {
+  public Order buildOrder(long consumerId, long restaurantId,
+                          List<MenuItemIdAndQuantity> lineItems) {
     Restaurant restaurant = restaurantRepository.findById(restaurantId)
             .orElseThrow(() -> new RestaurantNotFoundException(restaurantId));
 
-
     List<OrderLineItem> orderLineItems = makeOrderLineItems(lineItems, restaurant);
 
-    Order order = new Order(consumerId, restaurant, orderLineItems);
+    return new Order(consumerId, restaurant, orderLineItems);
+  }
 
-    consumerService.validateOrderForConsumer(consumerId, order.getOrderTotal());
-
+  /**
+   * Persists a previously built order. Runs in its own write transaction so that the remote
+   * consumer validation in {@link OrderCreator} is completed before any DB connection is held.
+   */
+  @Transactional
+  public Order saveOrder(Order order) {
     // TODO - charge a credit card too
 
     orderRepository.save(order);
