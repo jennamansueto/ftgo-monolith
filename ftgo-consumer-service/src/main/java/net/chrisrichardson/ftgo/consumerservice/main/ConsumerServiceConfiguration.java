@@ -2,6 +2,7 @@ package net.chrisrichardson.ftgo.consumerservice.main;
 
 import net.chrisrichardson.eventstore.examples.customersandorders.commonswagger.CommonSwaggerConfiguration;
 import net.chrisrichardson.ftgo.consumerservice.web.ConsumerWebConfiguration;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
@@ -14,4 +15,8 @@ import org.springframework.context.annotation.Import;
 @EntityScan
 @Import({ConsumerWebConfiguration.class, CommonSwaggerConfiguration.class})
 public class ConsumerServiceConfiguration {
+
+  public static void main(String[] args) {
+    SpringApplication.run(ConsumerServiceConfiguration.class, args);
+  }
 }

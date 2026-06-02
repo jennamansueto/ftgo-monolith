@@ -7,6 +7,7 @@ import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderRequest;
 import net.chrisrichardson.ftgo.orderservice.api.web.CreateOrderResponse;
 import net.chrisrichardson.ftgo.orderservice.api.web.OrderAcceptance;
 import net.chrisrichardson.ftgo.orderservice.api.web.ReviseOrderRequest;
+import net.chrisrichardson.ftgo.orderservice.domain.OrderCreator;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderNotFoundException;
 import net.chrisrichardson.ftgo.orderservice.domain.OrderService;
 import org.springframework.http.HttpStatus;
@@ -27,15 +28,18 @@ public class OrderController {
 
   private OrderRepository orderRepository;
 
+  private OrderCreator orderCreator;
 
-  public OrderController(OrderService orderService, OrderRepository orderRepository) {
+
+  public OrderController(OrderService orderService, OrderRepository orderRepository, OrderCreator orderCreator) {
     this.orderService = orderService;
     this.orderRepository = orderRepository;
+    this.orderCreator = orderCreator;
   }
 
   @RequestMapping(method = RequestMethod.POST)
   public CreateOrderResponse create(@RequestBody CreateOrderRequest request) {
-    Order order = orderService.createOrder(request.getConsumerId(),
+    Order order = orderCreator.createOrder(request.getConsumerId(),
             request.getRestaurantId(),
             request.getLineItems().stream().map(x -> new MenuItemIdAndQuantity(x.getMenuItemId(), x.getQuantity())).collect(toList())
     );

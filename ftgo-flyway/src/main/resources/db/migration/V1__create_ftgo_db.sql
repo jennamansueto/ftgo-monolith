@@ -1,12 +1,7 @@
 use ftgo;
 
-create table consumers
-(
-  id         bigint not null,
-  first_name varchar(255),
-  last_name  varchar(255),
-  primary key (id)
-) engine = InnoDB;
+-- NOTE: the `consumers` table has been extracted to the consumer service's own
+-- database (`ftgo_consumer`); see ftgo-consumer-service Flyway migrations.
 
 create table courier
 (

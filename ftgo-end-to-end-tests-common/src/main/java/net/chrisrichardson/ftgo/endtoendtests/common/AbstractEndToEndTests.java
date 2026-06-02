@@ -65,7 +65,13 @@ public abstract class AbstractEndToEndTests {
   }
 
   private String consumerBaseUrl(String... pathElements) {
-    return baseUrl(getApplicationPort(), "consumers", pathElements);
+    return baseUrl(getConsumerPort(), "consumers", pathElements);
+  }
+
+  // The consumer service has been extracted into its own deployable. By default it runs on the
+  // same host:port (in-process composition); cross-service deployments override this with 8082.
+  public int getConsumerPort() {
+    return getApplicationPort();
   }
 
   private String restaurantBaseUrl(String... pathElements) {
