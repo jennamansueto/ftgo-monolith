@@ -1,4 +1,4 @@
-package net.chrisrichardson.ftgo.domain;
+package net.chrisrichardson.ftgo.courierservice.domain;
 
 import net.chrisrichardson.ftgo.common.Address;
 import net.chrisrichardson.ftgo.common.PersonName;
@@ -8,6 +8,7 @@ import javax.persistence.*;
 import java.util.List;
 
 @Entity
+@Table(name = "courier")
 @Access(AccessType.FIELD)
 @DynamicUpdate
 public class Courier {
@@ -23,7 +24,7 @@ public class Courier {
   private Address address;
 
   @Embedded
-  private Plan plan;
+  private Plan plan = new Plan();
 
   private Boolean available;
 
@@ -37,15 +38,14 @@ public class Courier {
 
   public void noteAvailable() {
     this.available = true;
-
   }
 
   public void addAction(Action action) {
     plan.add(action);
   }
 
-  public void cancelDelivery(Order order) {
-    plan.removeDelivery(order);
+  public void cancelDelivery(long orderId) {
+    plan.removeDelivery(orderId);
   }
 
   public boolean isAvailable() {
@@ -60,11 +60,19 @@ public class Courier {
     return id;
   }
 
+  public PersonName getName() {
+    return name;
+  }
+
+  public Address getAddress() {
+    return address;
+  }
+
   public void noteUnavailable() {
     this.available = false;
   }
 
-  public List<Action> actionsForDelivery(Order order) {
-    return plan.actionsForDelivery(order);
+  public List<Action> actionsForDelivery(long orderId) {
+    return plan.actionsForDelivery(orderId);
   }
 }
