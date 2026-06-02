@@ -70,26 +70,7 @@ create table orders
   version                  bigint,
   assigned_courier_id      bigint,
   restaurant_id            bigint,
-  primary key (id)
-) engine = InnoDB;
-
-create table restaurant_menu_items
-(
-  restaurant_id bigint not null,
-  id            varchar(255),
-  name          varchar(255),
-  price        decimal(19, 2)
-) engine = InnoDB;
-
-create table restaurants
-(
-  id   bigint not null auto_increment,
-  name varchar(255),
-  street1 varchar(255),
-  street2 varchar(255),
-  city    varchar(255),
-  state   varchar(255),
-  zip     varchar(255),
+  restaurant_name          varchar(255),
   primary key (id)
 ) engine = InnoDB;
 
@@ -105,8 +86,5 @@ alter table order_line_items
 alter table orders
   add constraint orders_assigned_courier_id foreign key (assigned_courier_id) references courier (id);
 
-alter table orders
-  add constraint orders_restaurant_id foreign key (restaurant_id) references restaurants (id);
-
-alter table restaurant_menu_items
-  add constraint restaurant_menu_items_restaurant_id foreign key (restaurant_id) references restaurants (id);
+-- Restaurant data now lives in the extracted restaurant service (database ftgo_restaurant);
+-- the monolith keeps only a denormalized restaurant_id/restaurant_name on orders (no FK).
