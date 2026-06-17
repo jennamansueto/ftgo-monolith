@@ -29,8 +29,10 @@ public class MoneyModule extends SimpleModule {
           return null;
         else
           return new Money(str);
-      } else
-        throw ctxt.mappingException(getValueClass());
+      } else {
+        ctxt.reportInputMismatch(getValueClass(), "Expected a string value for Money");
+        return null;
+      }
     }
   }
 
