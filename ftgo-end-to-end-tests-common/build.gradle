@@ -14,7 +14,7 @@ dependencies {
     implementation "io.eventuate.util:eventuate-util-test:$eventuateUtilVersion"
 
 
-    implementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+    api "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
     implementation("io.rest-assured:rest-assured:$restAssuredVersion") {
         // rest-assured 5.x pulls Apache Groovy 4.x which conflicts with
         // Spring Boot 2.7's managed Groovy 3.x on the groovy-xml capability
