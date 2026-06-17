@@ -1,4 +1,7 @@
 dependencies {
-    compile project(":ftgo-common")
-    compile project(":ftgo-common-jpa")
+    api project(":ftgo-common")
+    api project(":ftgo-common-jpa")
+
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
 }
