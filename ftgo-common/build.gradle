@@ -11,12 +11,7 @@ dependencies {
     api group: 'org.apache.commons', name: 'commons-lang3', version: '3.14.0'
     api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.7"
 
-    implementation 'mysql:mysql-connector-java:5.1.39'
+    runtimeOnly 'com.mysql:mysql-connector-j:8.3.0'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-
-    runtimeOnly "javax.xml.bind:jaxb-api:2.2.11"
-    runtimeOnly "com.sun.xml.bind:jaxb-core:2.2.11"
-    runtimeOnly "com.sun.xml.bind:jaxb-impl:2.2.11"
-    runtimeOnly "javax.activation:activation:1.1.1"
 }

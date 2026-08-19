@@ -23,6 +23,10 @@ subprojects {
     sourceCompatibility = '17'
     targetCompatibility = '17'
 
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs << '-parameters'
+    }
+
     group = "net.chrisrichardson.ftgo"
 
     repositories {
